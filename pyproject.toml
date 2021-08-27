@@ -6,10 +6,12 @@ authors = ["Marcell Vazquez-Chanlatte <mvc@linux.com>"]
 license = "MIT"
 
 [tool.poetry.dependencies]
-python = "^3.9"
-attrs = "^20.0"
-dfa-identify = "^0.1.1"
-dfa = "^2.1.2"
+python = ">=3.9,<3.10"
+attrs = "^21.0"
+dfa-identify = "^2"
+dfa = "^2.2.1"
+numpy = "^1.21.2"
+scipy = "^1.7.1"
 
 [tool.poetry.dev-dependencies]
 pytest = "^6.2.4"
