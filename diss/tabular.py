@@ -33,16 +33,23 @@ def parse_unrolled_mdp(unrolled_mdp: nx.DiGraph):
 
 @attr.frozen
 class TabularPolicy:
+    root: Any
     dag: nx.DiGraph
     rationality: float
 
+    def entropy(self, node: Optional[Node] = None) -> float:
+        if node is None:
+            node = self.root
+        return self.dag.nodes[node]['entropy']
+
     def psat(self, node: Optional[Node] = None) -> float:
         if node is None:
-            roots = (n for n in self.dag.nodes if self.dag.in_degree(n) == 0)
-            return np.mean([self.psat(n) for n in roots])
+            node = self.root
         return np.exp(self.dag.nodes[node]['lsat'])
 
-    def value(self, node: Node) -> float:
+    def value(self, node: Optional[Node] = None) -> float:
+        if node is None:
+            node = self.root
         return self.dag.nodes[node]['val']
 
     def prob(self, node: Node, move: Node) -> float:
@@ -82,7 +89,11 @@ class TabularPolicy:
         edges = unrolled.edges
 
         nodes = reversed(list(nx.topological_sort(unrolled)))
+        roots = []
         for node in nodes:
+            if unrolled.in_degree(node) == 0:
+                roots.append(node)
+
             data = unrolled.nodes[node]
             kind = data['kind']
 
@@ -113,4 +124,7 @@ class TabularPolicy:
             data['entropy'] += probs @ (node_entropies + edge_entropies) 
             data['lsat'] = logsumexp(lsats, b=probs)
 
-        return TabularPolicy(dag=unrolled, rationality=rationality)
+        if len(roots) != 1:
+            raise ValueError('unrolled MDP must have a unique root node!')
+
+        return TabularPolicy(root=roots[0], dag=unrolled, rationality=rationality)
