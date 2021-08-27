@@ -63,7 +63,7 @@ def test_tabular_simple_mdp():
     graph.add_edge(4, 0)
     graph.add_edge(5, 3, prob=2/3)
     graph.add_edge(5, 4, prob=1/3)
-    graph.add_edge(6, 5)
+    graph.add_edge(6, 5, entropy=2/3*np.log(300))
     graph.add_edge(6, 4)
 
     ctl = TabularPolicy.from_rationality(graph, np.log(8))
@@ -73,6 +73,17 @@ def test_tabular_simple_mdp():
     assert ctl.value(3) == approx(np.log(10))
     assert ctl.value(4) == approx(np.log(3))
     assert ctl.value(5) == approx(np.log(300)/3)
-    assert ctl.value(6) == approx(np.log(3 + 300**(1/3)))
-    assert ctl.prob(6, 5) == approx(300**(1/3) / (3 + 300**(1/3)))
-    assert ctl.prob(6, 4) == approx(1 - ctl.prob(6, 5))
+    assert ctl.value(6) == approx(np.log(303))
+
+    assert ctl.prob(3, 1) == approx(8 / 10)
+    assert ctl.prob(3, 2) == approx(2 / 10)
+    assert ctl.prob(4, 2) == approx(2 / 3)
+    assert ctl.prob(4, 0) == approx(1 / 3)
+    assert ctl.prob(6, 5) == approx(300 / 303)
+    assert ctl.prob(6, 4) == approx(3 / 303)
+
+    assert ctl.psat(2) == 1 / 3
+    assert ctl.psat(3) == 13 / 15
+    assert ctl.psat(4) == 2 / 9
+    assert ctl.psat(5) == approx(88 / 135)
+    assert ctl.psat(6) == approx(1766 / 2727)
