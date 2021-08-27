@@ -89,15 +89,12 @@ class TabularPolicy:
 
             moves = list(unrolled.neighbors(node))  # Fix order of moves.
             vals = np.array([unrolled.nodes[m]['val'] for m in moves])
+            vals += np.array([edges[node, m].get('entropy', 0) for m in moves])
             lsats = np.array([unrolled.nodes[m]['lsat'] for m in moves])
 
             if kind == 'ego':
-                vals += np.array([
-                    edges[node, m].get('entropy', 0) for m in moves
-                ]) # Entropy bump from traversing edge.
-
-                data['val'] = logsumexp(vals) # Compute V.
                 probs = softmax(vals)
+                data['val'] = logsumexp(vals) # Compute V.
             else:
                 probs = np.array([edges[node, m]['prob'] for m in moves])
                 data['val'] = probs @ vals    # Compute Q.
