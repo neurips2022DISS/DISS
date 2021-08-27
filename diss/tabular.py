@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from functools import lru_cache
-from typing import Any
+from typing import Any, Optional
 
 import attr
 import networkx as nx
@@ -35,7 +35,10 @@ class TabularPolicy:
     dag: nx.DiGraph
     rationality: float
 
-    def psat(self, node: Node) -> float:
+    def psat(self, node: Optional[Node] = None) -> float:
+        if node is None:
+            roots = (n for n in self.dag.nodes if self.dag.in_degree(n) == 0)
+            return np.mean([self.psat(n) for n in roots])
         return np.exp(self.dag.nodes[node]['lsat'])
 
     def value(self, node: Node) -> float:
@@ -57,7 +60,7 @@ class TabularPolicy:
             return TabularPolicy.from_rationality(unrolled, rationality)
 
         def f(rationality):
-            return get_critic(rationality) - psat
+            return get_critic(rationality).psat() - psat
 
         if f(0) > 0:
             return get_critic(0)
@@ -66,7 +69,7 @@ class TabularPolicy:
         for i in range(10):
             rat = 1 << i
             if f(rat) > 0:
-                rat = binary_search(f, bot, top)
+                rat = bisect(f, 0, rat)
                 break
         return get_critic(rat)
 

@@ -33,6 +33,9 @@ def test_tabular_and():
 
     assert ctl.psat(3) == approx(1 / 2)
 
+    ctl = TabularPolicy.from_psat(graph, 1 / 2)
+    assert ctl.psat() == approx(1 / 2)
+
     # Add entropy to (3, 2) edge.
     graph.edges[3, 0]['entropy'] = np.log(2)
     ctl = TabularPolicy.from_rationality(graph, np.log(2))
