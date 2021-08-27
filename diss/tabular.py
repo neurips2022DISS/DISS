@@ -8,6 +8,7 @@ import networkx as nx
 import numpy as np
 from scipy.optimize import bisect
 from scipy.special import logsumexp, softmax
+from scipy.stats import entropy
 
 
 Node = Any
@@ -88,20 +89,28 @@ class TabularPolicy:
             if isinstance(kind, bool):
                 data['val'] = rat * float(kind)
                 data['lsat'] = 0 if kind else -oo
+                data['entropy'] = 0
                 continue
 
             moves = list(unrolled.neighbors(node))  # Fix order of moves.
-            vals = np.array([unrolled.nodes[m]['val'] for m in moves])
-            vals += np.array([edges[node, m].get('entropy', 0) for m in moves])
             lsats = np.array([unrolled.nodes[m]['lsat'] for m in moves])
+            node_entropies = np.array([unrolled.nodes[m]['entropy'] for m in moves])
+            edge_entropies = np.array([
+                edges[node, m].get('entropy', 0) for m in moves
+            ])
+            vals = np.array([unrolled.nodes[m]['val'] for m in moves])
+            vals += edge_entropies
 
             if kind == 'ego':
                 probs = softmax(vals)
                 data['val'] = logsumexp(vals) # Compute V.
+                data['entropy'] = entropy(probs)
             else:
                 probs = np.array([edges[node, m]['prob'] for m in moves])
                 data['val'] = probs @ vals    # Compute Q.
+                data['entropy'] = 0  # Only ego can produce action entropy.
 
+            data['entropy'] += probs @ (node_entropies + edge_entropies) 
             data['lsat'] = logsumexp(lsats, b=probs)
 
         return TabularPolicy(dag=unrolled, rationality=rationality)
