@@ -10,6 +10,8 @@ from scipy.optimize import bisect
 from scipy.special import logsumexp, softmax
 from scipy.stats import entropy
 
+from diss import AnnotatedMarkovChain, Path, LogProbs
+
 
 Node = Any
 oo = float('inf')
@@ -52,14 +54,23 @@ class TabularPolicy:
             node = self.root
         return self.dag.nodes[node]['val']
 
-    def prob(self, node: Node, move: Node) -> float:
+    def prob(self, node: Node, move: Node, log: bool = False) -> float:
         if (node, move) not in self.dag.edges:
-            return 0
-        if self.dag.nodes[node]['kind'] == 'ego':
+            lprob = -oo
+        elif self.dag.nodes[node]['kind'] == 'ego':
             Q, V = self.dag.nodes[move]['val'], self.dag.nodes[node]['val']
             Q += self.dag.edges[node, move].get('entropy', 0)
-            return np.exp(Q - V)
-        return self.dag.edges[node, move]['prob']
+            lprob = Q - V
+        else:
+            prob = self.dag.edges[node, move]['prob']
+            return np.log(prob) if log else prob
+        return lprob if log else np.exp(lprob) 
+
+    def log_probs(self, path: Paths) -> LogProbs:
+        return {(n, m): self.prob(n, m) for n, m in zip(path, path[1:])}
+
+    def extend(self, path: Path, target_size: int, is_sat: bool) -> Path:
+        ...
 
     @staticmethod
     def from_psat(unrolled: nx.DiGraph, psat: float) -> TabularPolicy:
