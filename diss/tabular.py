@@ -45,9 +45,12 @@ class TabularPolicy:
         return self.dag.nodes[node]['entropy']
 
     def psat(self, node: Optional[Node] = None) -> float:
+        return np.exp(self.lsat(node))
+
+    def lsat(self, node: Optional[Node] = None) -> float:
         if node is None:
             node = self.root
-        return np.exp(self.dag.nodes[node]['lsat'])
+        return self.dag.nodes[node]['lsat']
 
     def value(self, node: Optional[Node] = None) -> float:
         if node is None:
@@ -70,7 +73,25 @@ class TabularPolicy:
         return {(n, m): self.prob(n, m) for n, m in zip(path, path[1:])}
 
     def extend(self, path: Path, target_size: int, is_sat: bool) -> Path:
-        ...
+        path = list(path)
+        node = path[-1] if path else self.root 
+        while len(path) < target_size:
+            moves = self.dag.neighbors(node)
+            if not moves:
+                break
+            # Apply bayes rule to get Pr(s' | is_sat, s).
+            priors = np.array([self.prob(node, m) for m in moves])
+            likelihoods = np.array([self.psat(m) for m in moves])
+            normalizer = self.psat(node)
+
+            if not is_sat:
+                likelihoods = 1 - likelihoods
+                normalizer = 1 - normalizer
+
+            probs = priors * likelihoods / normalizer
+            node = random.choices(moves, probs)[0]
+            path.append(node)
+        return path 
 
     @staticmethod
     def from_psat(unrolled: nx.DiGraph, psat: float) -> TabularPolicy:

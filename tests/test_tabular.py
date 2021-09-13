@@ -90,3 +90,5 @@ def test_tabular_simple_mdp():
     assert ctl.psat(4) == 2 / 9
     assert ctl.psat(5) == approx(88 / 135)
     assert ctl.psat(6) == approx(1766 / 2727)
+
+    # Smoke test for MC api.
