@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import random
 from functools import lru_cache
 from typing import Any, Optional
 
@@ -72,11 +73,11 @@ class TabularPolicy:
     def log_probs(self, path: Paths) -> LogProbs:
         return {(n, m): self.prob(n, m) for n, m in zip(path, path[1:])}
 
-    def extend(self, path: Path, target_size: int, is_sat: bool) -> Path:
+    def extend(self, path: Path, target_len: int, is_sat: bool) -> Path:
         path = list(path)
         node = path[-1] if path else self.root 
-        while len(path) < target_size:
-            moves = self.dag.neighbors(node)
+        while len(path) < target_len:
+            moves = list(self.dag.neighbors(node))
             if not moves:
                 break
             # Apply bayes rule to get Pr(s' | is_sat, s).

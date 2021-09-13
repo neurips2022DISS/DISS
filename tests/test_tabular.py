@@ -92,3 +92,4 @@ def test_tabular_simple_mdp():
     assert ctl.psat(6) == approx(1766 / 2727)
 
     # Smoke test for MC api.
+    ctl.extend(path=(), target_len=1, is_sat=True)

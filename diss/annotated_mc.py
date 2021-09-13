@@ -11,7 +11,7 @@ class AnnotatedMarkovChain(Protocol):
     def log_probs(self, path: Path) -> LogProbs:
         ...
 
-    def extend(self, path: Path, target_size: int, is_sat: bool) -> Path:
+    def extend(self, path: Path, target_len: int, is_sat: bool) -> Path:
         ...
 
 
