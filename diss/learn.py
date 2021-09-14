@@ -63,7 +63,7 @@ Identify = Callable[[LabeledExamples], Concept]
 def search(
     demos: Demos, 
     to_chain: Concept2MC, 
-    to_concept: Identify
+    to_concept: Identify,
 ) -> Concepts:
     """Perform demonstration informed gradiented guided search."""
     tree = PrefixTree.from_demos(demos)
@@ -74,6 +74,7 @@ def search(
         yield concept
         
         chain = to_markov_chain(concept)
+
         # TODO: Calculate gradient based advice.
         # TODO: Sample whether to deviate or conform.
         # TODO: If deviate, use prefix tree to change prefix to deviation.

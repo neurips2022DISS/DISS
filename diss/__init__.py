@@ -1,9 +1,11 @@
-from typing import Any, Sequence
+from typing import Any, Mapping, Sequence, Union
 
 
 Node = Any
 Edge = tuple[Node, Node]
-Moves = frozenset[Node]
+EgoMoves = frozenset[Node]
+EnvMoves = Mapping[Node, float]
+Moves = Union[EgoMoves, EnvMoves]
 Path = Sequence[tuple[Node, Moves]]
 Demos = Sequence[Path]
 

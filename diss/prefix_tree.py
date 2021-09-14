@@ -54,6 +54,7 @@ class DemoPrefixTree:
         ...
 
     def can_deviate(self, path: Path) -> bool:
+        """Test whether or not this path indexes a leaf or exhaused node."""
         # TODO
         ...
 
