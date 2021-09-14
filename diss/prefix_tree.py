@@ -1,10 +1,11 @@
-from typing import Any
+from __future__ import annotations
+
+from typing import Any, Sequence
 
 import attr
 import networkx as nx
 
-
-Node = Any
+from diss import Path
 
 
 def valid_prefix_tree(tree: nx.DiGraph):
@@ -42,7 +43,21 @@ def valid_prefix_tree(tree: nx.DiGraph):
 
 @attr.define
 class DemoPrefixTree:
-   tree: nx.DiGraph = attr.ib(validator=valid_prefix_tree)
+    tree: nx.DiGraph = attr.ib(validator=valid_prefix_tree)
 
-   def leaves(self):
-       yield from (n for n in self.tree.nodes if self.tree.out_degree(n) == 0)
+    def leaves(self):  # Corresponds to unique demos.
+        yield from (n for n in self.tree.nodes if self.tree.out_degree(n) == 0)
+
+    def deviate(self, path: Path) -> Path:
+        """Returns path of the same length which deviates from demos."""
+        # TODO
+        ...
+
+    def can_deviate(self, path: Path) -> bool:
+        # TODO
+        ...
+
+    @staticmethod
+    def from_demos(demos: Sequence[Path]) -> DemoPrefixTree:
+        # TODO
+        ...

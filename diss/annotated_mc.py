@@ -1,18 +1,16 @@
 from __future__ import annotations
 
-from typing import Any, Sequence, Protocol
+from typing import Protocol
 
-
-Path = Sequence[Any]
-LogProbs = dict[Any, float]
+from diss import Edge, Path
 
 
 class AnnotatedMarkovChain(Protocol):
-    def log_probs(self, path: Path) -> LogProbs:
+    def log_probs(self, path: Path) -> dict[Edge, float]:
         ...
 
-    def extend(self, path: Path, target_len: int, is_sat: bool) -> Path:
+    def extend(self, path: Path, max_size: int, is_sat: bool) -> Path:
         ...
 
 
-__all__ = ['AnnotatedMarkovChain', 'Path', 'LogProbs']
+__all__ = ['AnnotatedMarkovChain']

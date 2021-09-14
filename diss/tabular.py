@@ -11,10 +11,9 @@ from scipy.optimize import bisect
 from scipy.special import logsumexp, softmax
 from scipy.stats import entropy
 
-from diss import AnnotatedMarkovChain, Path, LogProbs
+from diss import AnnotatedMarkovChain, Edge, Path, Node
 
 
-Node = Any
 oo = float('inf')
 
 
@@ -70,13 +69,14 @@ class TabularPolicy:
             return np.log(prob) if log else prob
         return lprob if log else np.exp(lprob) 
 
-    def log_probs(self, path: Paths) -> LogProbs:
-        return {(n, m): self.prob(n, m) for n, m in zip(path, path[1:])}
+    def log_probs(self, path: Paths) -> dict[Edge, float]:
+        pairwise = zip(path, path[1:])
+        return {(n, m): self.prob(n, m) for (n, _), (m, _) in pairwise}
 
-    def extend(self, path: Path, target_len: int, is_sat: bool) -> Path:
+    def extend(self, path: Path, max_len: int, is_sat: bool) -> Path:
         path = list(path)
         node = path[-1] if path else self.root 
-        while len(path) < target_len:
+        while len(path) < max_len:
             moves = list(self.dag.neighbors(node))
             if not moves:
                 break
@@ -91,7 +91,7 @@ class TabularPolicy:
 
             probs = priors * likelihoods / normalizer
             node = random.choices(moves, probs)[0]
-            path.append(node)
+            path.append((node, frozenset(moves)))
         return path 
 
     @staticmethod
