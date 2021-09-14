@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import random
 from typing import Any, Callable, Iterable, Optional, Protocol
 
 import attr
@@ -50,14 +51,20 @@ class Concept(Protocol):
 #                              Guided Search 
 ###############################################################################
 
-Advice = tuple[
-    float,               # Probability to deviate.
-    dict[Path, float],   # Distribution over deviate prefixes.
-    dict[Path, float],   # Dittribution over conform prefixes.
-]
 Concept2MC = Callable[[Concept, PrefixTree], MarkovChain]
 Concepts = Iterable[Concept]
 Identify = Callable[[LabeledExamples], Concept]
+
+
+def sample_examples(chain: MarkovChain, tree: PrefixTree) -> LabeledExamples:
+    # TODO: Compute gradient of surprisal w.r.t. conform/deviate leaves.
+    #       Note: surprisal if taken as function of variables indexed
+    #             by each (non-exhausted) node of the tree.
+    # TODO: Sample node according to gradient.
+    # TODO: Find path to node.
+    # TODO: If interior (non-exhaused) node, change path[-1] to deviate.
+    # TODO: Return path.
+    ...
 
 
 def search(
@@ -72,10 +79,5 @@ def search(
     while True:
         concept = to_concept(example_state)
         yield concept
-        
         chain = to_markov_chain(concept)
-
-        # TODO: Calculate gradient based advice.
-        # TODO: Sample whether to deviate or conform.
-        # TODO: If deviate, use prefix tree to change prefix to deviation.
-        # TODO: Update example state.
+        example_state @= sample_examples(chain, tree)
