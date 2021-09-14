@@ -54,6 +54,7 @@ class Concept(Protocol):
 Concept2MC = Callable[[Concept, PrefixTree], MarkovChain]
 Concepts = Iterable[Concept]
 Identify = Callable[[LabeledExamples], Concept]
+ExampleSampler = Callable[[MarkovChain, PrefixTree], LabeledExamples]
 
 
 def sample_examples(chain: MarkovChain, tree: PrefixTree) -> LabeledExamples:
@@ -71,6 +72,7 @@ def search(
     demos: Demos, 
     to_chain: Concept2MC, 
     to_concept: Identify,
+    sample_examples: ExampleSampler = sample_examples,
 ) -> Concepts:
     """Perform demonstration informed gradiented guided search."""
     tree = PrefixTree.from_demos(demos)
