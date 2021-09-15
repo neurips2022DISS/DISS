@@ -18,14 +18,8 @@ class LabeledExamples:
     positive: Examples = attr.ib(converter=frozenset, factory=frozenset)
     negative: Examples = attr.ib(converter=frozenset, factory=frozenset)
 
-    def __contains__(self, val: Any) -> Optional[bool]:
-        if val in self.positive:
-            return True
-        elif val in self.negative:
-            return False
-
     @property
-    def size(self):
+    def size(self) -> int:
         return self.dist(LabeledExamples())
 
     def __matmul__(self, other: LabeledExamples) -> LabeledExamples:
@@ -52,7 +46,6 @@ class Concept(Protocol):
 ###############################################################################
 
 Concept2MC = Callable[[Concept, PrefixTree], MarkovChain]
-Concepts = Iterable[Concept]
 Identify = Callable[[LabeledExamples], Concept]
 ExampleSampler = Callable[[MarkovChain, PrefixTree], LabeledExamples]
 
@@ -64,7 +57,9 @@ def sample_examples(chain: MarkovChain, tree: PrefixTree) -> LabeledExamples:
     # TODO: Sample node according to gradient.
     # TODO: Find path to node.
     # TODO: If interior (non-exhaused) node, change path[-1] to deviate.
-    # TODO: Return path.
+    # TODO: Look at sign of corresponding entry in gradient to give label.
+    # TODO: Extend path to node.
+    # TODO: Return Labeled Examples with path.
     ...
 
 
@@ -73,7 +68,7 @@ def search(
     to_chain: Concept2MC, 
     to_concept: Identify,
     sample_examples: ExampleSampler = sample_examples,
-) -> Concepts:
+) -> Iterable[Concept]:
     """Perform demonstration informed gradiented guided search."""
     tree = PrefixTree.from_demos(demos)
     example_state = LabeledExamples()
@@ -81,5 +76,5 @@ def search(
     while True:
         concept = to_concept(example_state)
         yield concept
-        chain = to_markov_chain(concept)
+        chain = to_chain(concept, tree)
         example_state @= sample_examples(chain, tree)

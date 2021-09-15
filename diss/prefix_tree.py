@@ -1,14 +1,14 @@
 from __future__ import annotations
 
-from typing import Any, Sequence
+from typing import Any, Iterable, Sequence
 
 import attr
 import networkx as nx
 
-from diss import Path
+from diss import Node, Path
 
 
-def valid_prefix_tree(tree: nx.DiGraph):
+def valid_prefix_tree(_1: Any, _2: Any, tree: nx.DiGraph) -> None:
     """Checks that tree format looks as expected.
 
     Format:
@@ -45,18 +45,8 @@ def valid_prefix_tree(tree: nx.DiGraph):
 class DemoPrefixTree:
     tree: nx.DiGraph = attr.ib(validator=valid_prefix_tree)
 
-    def leaves(self):  # Corresponds to unique demos.
+    def leaves(self) -> Iterable[Node]:  # Corresponds to unique demos.
         yield from (n for n in self.tree.nodes if self.tree.out_degree(n) == 0)
-
-    def deviate(self, path: Path) -> Path:
-        """Returns path of the same length which deviates from demos."""
-        # TODO
-        ...
-
-    def can_deviate(self, path: Path) -> bool:
-        """Test whether or not this path indexes a leaf or exhaused node."""
-        # TODO
-        ...
 
     @staticmethod
     def from_demos(demos: Sequence[Path]) -> DemoPrefixTree:

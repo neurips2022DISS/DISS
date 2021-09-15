@@ -2,11 +2,12 @@ from __future__ import annotations
 
 import random
 from functools import lru_cache
-from typing import Any, Optional
+from typing import Any, Optional, Sequence, cast
 
 import attr
 import networkx as nx
 import numpy as np
+from numpy.typing import ArrayLike
 from scipy.optimize import bisect
 from scipy.special import logsumexp, softmax
 from scipy.stats import entropy
@@ -17,7 +18,7 @@ from diss import AnnotatedMarkovChain, Edge, Path, Node
 oo = float('inf')
 
 
-def parse_unrolled_mdp(unrolled_mdp: nx.DiGraph):
+def parse_unrolled_mdp(unrolled_mdp: nx.DiGraph) -> None:
     for node in nx.topological_sort(unrolled_mdp):
         data = unrolled_mdp.nodes[node]
 
@@ -39,23 +40,23 @@ class TabularPolicy:
     dag: nx.DiGraph
     rationality: float
 
-    def entropy(self, node: Optional[Node] = None) -> float:
+    def entropy(self, node: Node = None) -> float:
         if node is None:
             node = self.root
-        return self.dag.nodes[node]['entropy']
+        return cast(float, self.dag.nodes[node]['entropy'])
 
-    def psat(self, node: Optional[Node] = None) -> float:
-        return np.exp(self.lsat(node))
+    def psat(self, node: Node = None) -> float:
+        return cast(float, np.exp(self.lsat(node)))
 
-    def lsat(self, node: Optional[Node] = None) -> float:
+    def lsat(self, node: Node = None) -> float:
         if node is None:
             node = self.root
-        return self.dag.nodes[node]['lsat']
+        return cast(float, self.dag.nodes[node]['lsat'])
 
-    def value(self, node: Optional[Node] = None) -> float:
+    def value(self, node: Node = None) -> float:
         if node is None:
             node = self.root
-        return self.dag.nodes[node]['val']
+        return cast(float, self.dag.nodes[node]['val'])
 
     def prob(self, node: Node, move: Node, log: bool = False) -> float:
         if (node, move) not in self.dag.edges:
@@ -66,14 +67,15 @@ class TabularPolicy:
             lprob = Q - V
         else:
             prob = self.dag.edges[node, move]['prob']
-            return np.log(prob) if log else prob
-        return lprob if log else np.exp(lprob) 
+            return cast(float, np.log(prob) if log else prob)
+        return cast(float, lprob if log else np.exp(lprob))
 
-    def log_probs(self, path: Paths) -> dict[Edge, float]:
+    def log_probs(self, path: Path) -> dict[Edge, float]:
         pairwise = zip(path, path[1:])
         return {(n, m): self.prob(n, m) for (n, _), (m, _) in pairwise}
 
     def extend(self, path: Path, max_len: int, is_sat: bool) -> Path:
+        # TODO: handle case where impossible to sample.
         path = list(path)
         node = path[-1] if path else self.root 
         while len(path) < max_len:
@@ -89,7 +91,7 @@ class TabularPolicy:
                 likelihoods = 1 - likelihoods
                 normalizer = 1 - normalizer
 
-            probs = priors * likelihoods / normalizer
+            probs = cast(Sequence[float], priors * likelihoods / normalizer)
             node = random.choices(moves, probs)[0]
             path.append((node, frozenset(moves)))
         return path 
@@ -97,10 +99,10 @@ class TabularPolicy:
     @staticmethod
     def from_psat(unrolled: nx.DiGraph, psat: float) -> TabularPolicy:
         @lru_cache(maxsize=3)
-        def get_critic(rationality):
+        def get_critic(rationality: float) -> TabularPolicy:
             return TabularPolicy.from_rationality(unrolled, rationality)
 
-        def f(rationality):
+        def f(rationality: float) -> float:
             return get_critic(rationality).psat() - psat
 
         if f(0) > 0:
@@ -108,7 +110,7 @@ class TabularPolicy:
 
         # Doubling trick.
         for i in range(10):
-            rat = 1 << i
+            rat: float = 1 << i
             if f(rat) > 0:
                 rat = bisect(f, 0, rat)
                 break
@@ -154,7 +156,8 @@ class TabularPolicy:
                 data['val'] = probs @ vals    # Compute Q.
                 data['entropy'] = 0  # Only ego can produce action entropy.
 
-            data['entropy'] += probs @ (node_entropies + edge_entropies) 
+            entropies: ArrayLike = node_entropies + edge_entropies
+            data['entropy'] += probs @ entropies  # type: ignore
             data['lsat'] = logsumexp(lsats, b=probs)
 
         if len(roots) != 1:
