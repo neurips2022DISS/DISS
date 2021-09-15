@@ -43,20 +43,20 @@ class TabularPolicy:
     def entropy(self, node: Node = None) -> float:
         if node is None:
             node = self.root
-        return cast(float, self.dag.nodes[node]['entropy'])
+        return self.dag.nodes[node]['entropy']  # type: ignore
 
     def psat(self, node: Node = None) -> float:
-        return cast(float, np.exp(self.lsat(node)))
+        return np.exp(self.lsat(node))  # type: ignore
 
     def lsat(self, node: Node = None) -> float:
         if node is None:
             node = self.root
-        return cast(float, self.dag.nodes[node]['lsat'])
+        return self.dag.nodes[node]['lsat']  # type: ignore
 
     def value(self, node: Node = None) -> float:
         if node is None:
             node = self.root
-        return cast(float, self.dag.nodes[node]['val'])
+        return self.dag.nodes[node]['val']  # type: ignore
 
     def prob(self, node: Node, move: Node, log: bool = False) -> float:
         if (node, move) not in self.dag.edges:
@@ -67,8 +67,8 @@ class TabularPolicy:
             lprob = Q - V
         else:
             prob = self.dag.edges[node, move]['prob']
-            return cast(float, np.log(prob) if log else prob)
-        return cast(float, lprob if log else np.exp(lprob))
+            return np.log(prob) if log else prob  # type: ignore
+        return lprob if log else np.exp(lprob)  # type: ignore
 
     def log_probs(self, path: Path) -> dict[Edge, float]:
         pairwise = zip(path, path[1:])
