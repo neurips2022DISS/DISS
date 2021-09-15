@@ -8,47 +8,49 @@ import networkx as nx
 from diss import Node, Path
 
 
-def valid_prefix_tree(_1: Any, _2: Any, tree: nx.DiGraph) -> None:
-    """Checks that tree format looks as expected.
-
-    Format:
-      1. At least one leaf node should have a "label" attribute.
-      2. Each interior node have an label attribute with value
-         "ego" or "env".
-      3. Edges coming out of "env" edges should define "prob"
-         attribute.
-      4. `tree` must be acyclic and have a unique root.
-    """
-    has_root = has_conform = False
-    for node in nx.topological_sort(tree):
-        is_root = tree.in_degree(node) == 0
-        if is_root and has_root:
-            raise ValueError('tree must only have a single root.')
-        has_root |= is_root
-
-        if tree.out_degree(node) == 0:
-            has_conform |= 'label' in tree.nodes[node]
-            continue
-        
-        if tree.nodes[node]['label'] == 'ego':
-            continue
-
-        neighbors = tree.neighbors(node)
-        if any('prob' not in tree.edges[node, n] for n in neighbors):
-            raise ValueError('env nodes must define distribution.')
-
-    if not has_conform:
-        raise ValueError('Must have at least one labeled leaf')
+def transition(tree: nx.DiGraph, src: Node, dst: Any) -> Node:
+    for src in tree.neighbors(src):
+        if tree.nodes[src]['source'] == dst:
+            return src
+    raise ValueError('{=src} is not connected to {=dst}.')
 
 
 @attr.define
 class DemoPrefixTree:
-    tree: nx.DiGraph = attr.ib(validator=valid_prefix_tree)
+    tree: nx.DiGraph
+
+    def _node(self, key: int) -> Node:
+        ...
 
     def leaves(self) -> Iterable[Node]:  # Corresponds to unique demos.
-        yield from (n for n in self.tree.nodes if self.tree.out_degree(n) == 0)
+        yield from map(self._node, self.tree.predecessors(-1))
+
+    def nodes(self) -> Iterable[Node]:
+        keys = (n for n in self.tree.nodes if n not in {0, -1})
+        yield from map(self._node, keys)
+
+    def prefix(self, key: int) -> Path:
+        assert key > 0
+
+        path = []
+        while key != 0:
+            data = self.tree.nodes[key]           
+            path.append((data['source'], data['moves']))
+            key, *_ = self.tree.predecessors(key)
+        path.reverse() 
+        return path
+
+    def keys(self, path: Path) -> Iterable[int]:
+        ...
 
     @staticmethod
     def from_demos(demos: Sequence[Path]) -> DemoPrefixTree:
-        # TODO
-        ...
+        tree = nx.prefix_tree(demos)
+        tree.nodes[0]['moves'] = frozenset()
+        for demo in demos:
+            state = 0
+            for move, moves in demos:
+                state = transition(tree, state, move)
+                tree.nodes[state]['moves'] = moves
+        return DemoPrefixTree(tree)  
+
