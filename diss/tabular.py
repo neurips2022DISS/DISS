@@ -74,13 +74,15 @@ class TabularPolicy:
         pairwise = zip(path, path[1:])
         return [self.prob(n, m) for n, m in pairwise]
 
-    def extend(self, path: Path, max_len: int, is_sat: bool) -> Optional[Path]:
+    def extend(self, path: Path, max_len: int, is_sat: bool, initial_moves: frozenset[State]) -> Optional[Path]:
         path = list(path)
         node = path[-1] if path else self.root 
-        while len(path) < max_len:
-            moves = list(self.dag.neighbors(node))
-            if not moves:
-                break
+        if self.psat(node) == 0:
+            return None  # Impossible to realize is_sat label.
+
+
+        moves = list(initial_moves)  # Fix order of moves.
+        while moves and (len(path) < max_len):
             # Apply bayes rule to get Pr(s' | is_sat, s).
             priors = np.array([self.prob(node, m) for m in moves])
             likelihoods = np.array([self.psat(m) for m in moves])
@@ -90,12 +92,10 @@ class TabularPolicy:
                 likelihoods = 1 - likelihoods
                 normalizer = 1 - normalizer
 
-            if normalizer == 0:
-                return None  # Impossible to realize is_sat label.
-
             probs = cast(Sequence[float], priors * likelihoods / normalizer)
             node = random.choices(moves, probs)[0]
             path.append(node)
+            moves = list(self.dag.neighbors(node))
         return path 
 
     @staticmethod

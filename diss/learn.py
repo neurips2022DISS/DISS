@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import random
-from typing import Any, Callable, Iterable, Optional, Protocol
+from typing import Any, Callable, Iterable, Optional, Protocol, Sequence
 
 import attr
 
@@ -45,37 +45,74 @@ class Concept(Protocol):
 #                              Guided Search 
 ###############################################################################
 
-Concept2MC = Callable[[Concept, PrefixTree], MarkovChain]
 Identify = Callable[[LabeledExamples], Concept]
-ExampleSampler = Callable[[MarkovChain, PrefixTree], LabeledExamples]
+MarkovChainFact = Callable[[Concept, PrefixTree, int], MarkovChain]
+ExampleSamplerFact = Callable[
+    [Demos],  # Concept, PrefixTree, max_len
+    Callable[[Concept], LabeledExamples]
+]
 
 
-def sample_examples(chain: MarkovChain, tree: PrefixTree) -> LabeledExamples:
+def surprisal_grad(chain: MarkovChain, tree: PrefixTree) -> list[float]:
     # TODO: Compute gradient of surprisal w.r.t. conform/deviate leaves.
     #       Note: surprisal if taken as function of variables indexed
     #             by each (non-exhausted) node of the tree.
-    # TODO: Sample node according to gradient.
-    # TODO: Find path to node.
-    # TODO: If interior (non-exhaused) node, change path[-1] to deviate.
-    # TODO: Look at sign of corresponding entry in gradient to give label.
-    # TODO: Extend path to node.
-    # TODO: If extension fails assign 0 weight to that node and repeat.
-    # TODO: Return Labeled Examples with path.
+ 
+    # TODO: Compute gradient of surprisal of demos.
+    # TODO: First entry has grad 0 to pad index.
+    # TODO: If interior exhaused node, gradient is 0 
     ...
+
+
+@attr.define
+class GradientGuidedSampler:
+    tree: PrefixTree
+    to_chain: MarkovChainFact
+    max_len: int
+    prev: Optional[LabeledExamples] = None
+    prev_prob: float = 1e-1  # Prob of outputting prev example.
+
+    @staticmethod
+    def from_demos(demos: Demos, to_chain: MarkovChainFact, max_len: int) -> GradientGuidedSampler:
+        tree = PrefixTree.from_demos(demos)
+        if max_len is None:
+            max_len = tree.max_len
+        return GradientGuidedSampler(tree, to_chain, max_len)
+
+    def __call__(self, concept: Concept) -> LabeledExamples:
+        if (self.prev is not None) and (random.random() < self.prev_prob):
+            return self.prev
+        tree = self.tree
+        chain = self.to_chain(concept, tree, self.max_len)
+        grad = surprisal_grad(chain, tree)
+        while sum(grad) > 0:
+            node = random.choices(range(len(grad)), grad)[0]  # Sample node.
+
+            is_sat = grad[node] > 0  # Target label.
+            prefix = tree.prefix(node)
+            moves = self.tree.unused_moves(node)
+            path = chain.extend(prefix, self.max_len, not is_sat, moves)
+            if path is None:
+                grad[node] = 0  # Don't try this node again.
+                continue
+            path = tuple(path) # Make immutable before sending out example.
+            if is_sat:
+                return LabeledExamples(positive=[path])  # type: ignore
+            else:
+                return LabeledExamples(negative=[path])  # type: ignore
+        raise RuntimeError("Gradient can't be use to guide search?!")
 
 
 def search(
     demos: Demos, 
-    to_chain: Concept2MC, 
     to_concept: Identify,
-    sample_examples: ExampleSampler = sample_examples,
+    sample_fact: ExampleSamplerFact,
 ) -> Iterable[Concept]:
     """Perform demonstration informed gradiented guided search."""
-    tree = PrefixTree.from_demos(demos)
-    example_state = LabeledExamples()
+    example_sampler = sample_fact(demos)
 
+    examples = LabeledExamples()
     while True:
-        concept = to_concept(example_state)
+        concept = to_concept(examples)
         yield concept
-        chain = to_chain(concept, tree)
-        example_state @= sample_examples(chain, tree)
+        examples @= example_sampler(concept)
