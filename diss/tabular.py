@@ -12,7 +12,7 @@ from scipy.optimize import bisect
 from scipy.special import logsumexp, softmax
 from scipy.stats import entropy
 
-from diss import AnnotatedMarkovChain, Edge, Path, Node
+from diss import AnnotatedMarkovChain, Path, State
 
 
 oo = float('inf')
@@ -40,25 +40,25 @@ class TabularPolicy:
     dag: nx.DiGraph
     rationality: float
 
-    def entropy(self, node: Node = None) -> float:
+    def entropy(self, node: State = None) -> float:
         if node is None:
             node = self.root
         return self.dag.nodes[node]['entropy']  # type: ignore
 
-    def psat(self, node: Node = None) -> float:
+    def psat(self, node: State = None) -> float:
         return np.exp(self.lsat(node))  # type: ignore
 
-    def lsat(self, node: Node = None) -> float:
+    def lsat(self, node: State = None) -> float:
         if node is None:
             node = self.root
         return self.dag.nodes[node]['lsat']  # type: ignore
 
-    def value(self, node: Node = None) -> float:
+    def value(self, node: State = None) -> float:
         if node is None:
             node = self.root
         return self.dag.nodes[node]['val']  # type: ignore
 
-    def prob(self, node: Node, move: Node, log: bool = False) -> float:
+    def prob(self, node: State, move: State, log: bool = False) -> float:
         if (node, move) not in self.dag.edges:
             lprob = -oo
         elif self.dag.nodes[node]['kind'] == 'ego':
@@ -70,9 +70,9 @@ class TabularPolicy:
             return np.log(prob) if log else prob  # type: ignore
         return lprob if log else np.exp(lprob)  # type: ignore
 
-    def log_probs(self, path: Path) -> dict[Edge, float]:
+    def log_probs(self, path: Path) -> list[float]:
         pairwise = zip(path, path[1:])
-        return {(n, m): self.prob(n, m) for (n, _), (m, _) in pairwise}
+        return [self.prob(n, m) for n, m in pairwise]
 
     def extend(self, path: Path, max_len: int, is_sat: bool) -> Path:
         # TODO: handle case where impossible to sample.
@@ -93,7 +93,7 @@ class TabularPolicy:
 
             probs = cast(Sequence[float], priors * likelihoods / normalizer)
             node = random.choices(moves, probs)[0]
-            path.append((node, frozenset(moves)))
+            path.append(node)
         return path 
 
     @staticmethod
