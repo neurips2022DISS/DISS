@@ -59,6 +59,7 @@ def sample_examples(chain: MarkovChain, tree: PrefixTree) -> LabeledExamples:
     # TODO: If interior (non-exhaused) node, change path[-1] to deviate.
     # TODO: Look at sign of corresponding entry in gradient to give label.
     # TODO: Extend path to node.
+    # TODO: If extension fails assign 0 weight to that node and repeat.
     # TODO: Return Labeled Examples with path.
     ...
 
