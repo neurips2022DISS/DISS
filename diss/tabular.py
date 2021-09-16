@@ -74,8 +74,7 @@ class TabularPolicy:
         pairwise = zip(path, path[1:])
         return [self.prob(n, m) for n, m in pairwise]
 
-    def extend(self, path: Path, max_len: int, is_sat: bool) -> Path:
-        # TODO: handle case where impossible to sample.
+    def extend(self, path: Path, max_len: int, is_sat: bool) -> Optional[Path]:
         path = list(path)
         node = path[-1] if path else self.root 
         while len(path) < max_len:
@@ -90,6 +89,9 @@ class TabularPolicy:
             if not is_sat:
                 likelihoods = 1 - likelihoods
                 normalizer = 1 - normalizer
+
+            if normalizer == 0:
+                return None  # Impossible to realize is_sat label.
 
             probs = cast(Sequence[float], priors * likelihoods / normalizer)
             node = random.choices(moves, probs)[0]

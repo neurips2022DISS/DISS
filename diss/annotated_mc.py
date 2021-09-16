@@ -9,7 +9,7 @@ class AnnotatedMarkovChain(Protocol):
     def log_probs(self, path: Path) -> Sequence[float]:
         ...
 
-    def extend(self, path: Path, max_size: int, is_sat: bool) -> Path:
+    def extend(self, path: Path, max_size: int, is_sat: bool) -> Optional[Path]:
         ...
 
 
