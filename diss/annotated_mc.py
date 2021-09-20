@@ -14,7 +14,7 @@ SampledPath = Optional[tuple[Path, float]]
 
 class AnnotatedMarkovChain(Protocol):
     @property
-    def demo_log_probs(self) -> dict[Edge, float]:
+    def edge_probs(self) -> dict[Edge, float]:
         """Returns the probablity of edges in the demo prefix tree."""
         ...
 

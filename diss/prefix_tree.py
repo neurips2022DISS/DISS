@@ -24,6 +24,10 @@ class DemoPrefixTree:
     tree: nx.DiGraph
     max_len: int
 
+    def parent(self, node: int) -> Node:
+        node, *_ = self.tree.predecessors(node)
+        return node 
+
     def state(self, node: int) -> State:
         """Returns which state node points to."""
         return self.tree.nodes[node]['source']
@@ -31,6 +35,9 @@ class DemoPrefixTree:
     def count(self, node: int) -> int:
         """Returns how many demonstrations pass through this node."""
         return cast(int, self.tree.nodes[node]['count'])
+
+    def is_ego(self, node: int) -> bool:
+        return isinstance(self.moves, frozenset)
 
     def moves(self, node: int) -> Moves:
         return cast(Moves, self.tree.nodes[node]['moves'])
@@ -49,7 +56,7 @@ class DemoPrefixTree:
         while node != 0:
             data = self.tree.nodes[node]           
             path.append(data['source'])
-            node, *_ = self.tree.predecessors(node)
+            node = self.parent(node)
         path.reverse() 
         return path
 
@@ -65,14 +72,22 @@ class DemoPrefixTree:
         else:
             node = 0
             for move, _ in demo:
-                node = transition(self.tree, node, move)
                 yield node
+                node = transition(self.tree, node, move)
 
     @staticmethod
     def from_demos(demos: Demos) -> DemoPrefixTree:
         paths = [[x for x, _ in demo] for demo in demos]
         tree = nx.prefix_tree(paths)
         tree.remove_node(-1)  # Node added by networkx.
+        assert set(tree.neighbors(0)) == {1}
+        tree.remove_node(0)   # Node added by networkx.
+        nx.relabel_nodes(
+            G=tree,
+            mapping={n: n-1 for n in range(len(tree.nodes))}, 
+            copy=False,
+        )
+
         for demo in demos:
             node = 0
             for state, moves in demo:

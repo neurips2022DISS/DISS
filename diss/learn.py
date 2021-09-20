@@ -4,10 +4,11 @@ import random
 from typing import Any, Callable, Iterable, Optional, Protocol, Sequence
 
 import attr
+import numpy as np
 
 from diss import AnnotatedMarkovChain as MarkovChain
-from diss import Demos, Path
-from diss.prefix_tree import DemoPrefixTree as PrefixTree
+from diss import Node, Demos, Path
+from diss import DemoPrefixTree as PrefixTree
 
 
 Examples = frozenset[Any]
@@ -54,14 +55,32 @@ ExampleSamplerFact = Callable[
 
 
 def surprisal_grad(chain: MarkovChain, tree: PrefixTree) -> list[float]:
-    # TODO: Compute gradient of surprisal w.r.t. conform/deviate leaves.
-    #       Note: surprisal if taken as function of variables indexed
-    #             by each (non-exhausted) node of the tree.
- 
-    # TODO: Compute gradient of surprisal of demos.
-    # TODO: First entry has grad 0 to pad index.
-    # TODO: If interior exhaused node, gradient is 0 
-    ...
+    edge_probs = chain.edge_probs 
+    dS: list[float] = max(tree.nodes()) * [0.0]
+
+    def compute_dS(node: Node) -> dict[Node, float]:
+        kids = tree.tree.neighbors(node)
+        if not kids:
+            return {node: 1}
+
+        reach_probs = {}
+        for kid in kids:
+            pkid = reach_probs[kid] = edge_probs[kid]
+            dS[kid] -= pkid * tree.count(kid)  # Deviate contribution.
+
+            for node2, reachp in compute_dS(kid).items():
+                reachp = reach_probs[node2] = pkid * reachp
+                dS[node2] += (1 / pkid - 1) * reachp
+
+        return reach_probs
+     
+    # Zero out any exhausted nodes.
+    for node in tree.nodes():
+        if tree.is_leaf(node) or tree.unused_moves(node):
+            continue
+        dS[node] = 0
+
+    return list(dS)
 
 
 @attr.define
