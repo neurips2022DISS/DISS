@@ -55,6 +55,7 @@ ExampleSamplerFact = Callable[
 
 
 def surprisal_grad(chain: MarkovChain, tree: PrefixTree) -> list[float]:
+    # TODO: Remove recursion and base on numpy.
     edge_probs = chain.edge_probs 
     dS: list[float] = max(tree.nodes()) * [0.0]
 
@@ -65,18 +66,20 @@ def surprisal_grad(chain: MarkovChain, tree: PrefixTree) -> list[float]:
 
         reach_probs = {}
         for kid in kids:
-            pkid = reach_probs[kid] = edge_probs[kid]
-            dS[kid] -= pkid * tree.count(kid)  # Deviate contribution.
+            pkid = reach_probs[kid] = edge_probs[node, kid]
+            if tree.is_ego(node):
+                dS[kid] -= pkid * tree.count(kid)  # Deviate contribution.
 
             for node2, reachp in compute_dS(kid).items():
                 reachp = reach_probs[node2] = pkid * reachp
-                dS[node2] += (1 / pkid - 1) * reachp
+                if tree.is_ego(node):
+                    dS[node2] += (1 / pkid - 1) * reachp
 
         return reach_probs
      
     # Zero out any exhausted nodes.
     for node in tree.nodes():
-        if tree.is_leaf(node) or tree.unused_moves(node):
+        if tree.is_leaf(node) and tree.unused_moves(node):
             continue
         dS[node] = 0
 
