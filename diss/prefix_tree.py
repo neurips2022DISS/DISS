@@ -5,10 +5,10 @@ from typing import Any, Iterable, Optional, Sequence, cast
 import attr
 import networkx as nx
 
-from diss import Demo, Demos, Moves, Path, State
+from diss import Demo, Demos, Moves, Node, Path, State
 
 
-Node = int  # nx.prefix tree used ints as Nodes.
+__all__ = ["DemoPrefixTree"]
 
 
 def transition(tree: nx.DiGraph, src: State, dst: Any) -> State:

@@ -82,21 +82,22 @@ class GradientGuidedSampler:
     def __call__(self, concept: Concept) -> LabeledExamples:
         if (self.prev is not None) and (random.random() < self.prev_prob):
             return self.prev
-        tree = self.tree
+        tree, max_len = self.tree, self.max_len
         chain = self.to_chain(concept, tree, self.max_len)
         grad = surprisal_grad(chain, tree)
         while sum(grad) > 0:
             node = random.choices(range(len(grad)), grad)[0]  # Sample node.
 
-            is_sat = grad[node] > 0  # Target label.
-            prefix = tree.prefix(node)
-            moves = self.tree.unused_moves(node)
-            path = chain.extend(prefix, self.max_len, not is_sat, moves)
-            if path is None:
+            win = grad[node] > 0  # Target label.
+            sample = chain.sample(pivot=node, max_len=max_len, win=not win)
+            if sample is None:
                 grad[node] = 0  # Don't try this node again.
                 continue
+
+            path, _ = sample  # Currently don't use sample probability.
             path = tuple(path) # Make immutable before sending out example.
-            if is_sat:
+
+            if win:
                 return LabeledExamples(positive=[path])  # type: ignore
             else:
                 return LabeledExamples(negative=[path])  # type: ignore
