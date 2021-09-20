@@ -86,6 +86,14 @@ def surprisal_grad(chain: MarkovChain, tree: PrefixTree) -> list[float]:
     return list(dS)
 
 
+def surprisal(chain: MarkovChain, tree: PrefixTree) -> float:
+    edge_probs = chain.edge_probs
+    surprise = 0
+    for (_, node), edgep in edge_probs.items():
+        surprise -= tree.count(node) * np.log(edgep)
+    return surprise 
+
+
 @attr.define
 class GradientGuidedSampler:
     tree: PrefixTree
