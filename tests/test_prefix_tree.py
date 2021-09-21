@@ -16,3 +16,11 @@ def test_prefixtree():
     path1 = [x for x, _ in demo1]
     for i, node in enumerate(tree.nodes(demo1)):
         assert tree.prefix(node) == path1[:i+1]
+        if i < 3:
+            assert len(tree.unused_moves(node)) == 1
+        else:
+            assert tree.is_leaf(node)
+            assert len(tree.unused_moves(node)) == 0
+
+        if i != 1:
+            assert tree.is_ego(node)

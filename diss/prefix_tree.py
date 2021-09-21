@@ -39,7 +39,7 @@ class DemoPrefixTree:
         return cast(int, self.tree.nodes[node]['count'])
 
     def is_ego(self, node: int) -> bool:
-        return isinstance(self.moves, frozenset)
+        return isinstance(self.moves(node), frozenset)
 
     def moves(self, node: int) -> Moves:
         return cast(Moves, self.tree.nodes[node]['moves'])
@@ -90,12 +90,11 @@ class DemoPrefixTree:
         )
 
         for demo in demos:
-            node = 0
-            for depth, (state, moves) in enumerate(demo[1:]):
-                node = transition(tree, node, state)
+            for depth, (state, moves) in enumerate(demo):
+                node = 0 if depth == 0 else transition(tree, node, state)
                 data = tree.nodes[node]
                 data.setdefault('count', 0)
-                data.setdefault('depth', depth + 1)  # Skipped root.
+                data.setdefault('depth', depth)
                 data.setdefault('moves', type(moves)())
                 data['count'] += 1
                 data['moves'] |= moves
