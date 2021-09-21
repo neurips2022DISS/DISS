@@ -11,11 +11,11 @@ from diss import Demo, Demos, Moves, Node, Path, State
 __all__ = ["DemoPrefixTree"]
 
 
-def transition(tree: nx.DiGraph, src: State, dst: Any) -> State:
-    for src in tree.neighbors(src):
-        if tree.nodes[src]['source'] == dst:
-            return src
-    raise ValueError('{=src} is not connected to {=dst}.')
+def transition(tree: nx.DiGraph, src: Node, move: State) -> Node:
+    for tgt in tree.neighbors(src):
+        if tree.nodes[tgt]['source'] == move:
+            return tgt
+    raise ValueError(f'{src=} is not connected to {move=}.')
 
 
 @attr.frozen
@@ -71,7 +71,7 @@ class DemoPrefixTree:
             yield from self.tree.nodes
         else:
             node = 0
-            for move, _ in demo:
+            for move, _ in demo[1:]:
                 yield node
                 node = transition(self.tree, node, move)
 
@@ -90,11 +90,12 @@ class DemoPrefixTree:
 
         for demo in demos:
             node = 0
-            for state, moves in demo:
+            for depth, (state, moves) in enumerate(demo[1:]):
                 node = transition(tree, node, state)
                 data = tree.nodes[node]
                 data.setdefault('count', 0)
-                data.setdefault('moves', set())
+                data.setdefault('depth', depth + 1)  # Skipped root.
+                data.setdefault('moves', type(moves)())
                 data['count'] += 1
                 data['moves'] |= moves
 
