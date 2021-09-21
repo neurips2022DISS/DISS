@@ -14,7 +14,7 @@ __all__ = ["DemoPrefixTree"]
 def transition(tree: nx.DiGraph, src: Node, move: State) -> Node:
     for tgt in tree.neighbors(src):
         if tree.nodes[tgt]['source'] == move:
-            return tgt
+            return cast(int, tgt)
     raise ValueError(f'{src=} is not connected to {move=}.')
 
 
@@ -24,7 +24,9 @@ class DemoPrefixTree:
     tree: nx.DiGraph
     max_len: int
 
-    def parent(self, node: int) -> Node:
+    def parent(self, node: int) -> Optional[Node]:
+        if node == 0:
+            return None
         node, *_ = self.tree.predecessors(node)
         return node 
 
@@ -49,11 +51,10 @@ class DemoPrefixTree:
     def is_leaf(self, node: int) -> bool:
         return self.tree.out_degree(node) == 0
 
-    def prefix(self, node: int) -> Path:
-        assert node > 0
-
-        path = []
-        while node != 0:
+    def prefix(self, start: int) -> Path:
+        path: list[State] = []
+        node: Optional[Node] = start 
+        while node is not None:
             data = self.tree.nodes[node]           
             path.append(data['source'])
             node = self.parent(node)
@@ -70,10 +71,10 @@ class DemoPrefixTree:
         if demo is None:
             yield from self.tree.nodes
         else:
-            node = 0
+            yield (node := 0)
             for move, _ in demo[1:]:
-                yield node
                 node = transition(self.tree, node, move)
+                yield node
 
     @staticmethod
     def from_demos(demos: Demos) -> DemoPrefixTree:
