@@ -6,7 +6,7 @@ from diss import Node, Edge, Path, State
 from diss import DemoPrefixTree as PrefixTree
 
 
-__all__ = ['AnnotatedMarkovChain']
+__all__ = ['AnnotatedMarkovChain', 'SampledPath']
 
 
 SampledPath = Optional[tuple[Path, float]]

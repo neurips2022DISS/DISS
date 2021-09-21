@@ -61,6 +61,9 @@ class DemoPrefixTree:
         path.reverse() 
         return path
 
+    def edges(self) -> Iterable[tuple[int, int]]:
+        yield from self.tree.edges
+
     def nodes(self, demo: Optional[Demo] = None) -> Iterable[int]:
         """Yields nodes in prefix tree.
 
@@ -91,7 +94,7 @@ class DemoPrefixTree:
 
         for demo in demos:
             for depth, (state, moves) in enumerate(demo):
-                node = 0 if depth == 0 else transition(tree, node, state)
+                node: int = 0 if depth == 0 else transition(tree, node, state)
                 data = tree.nodes[node]
                 data.setdefault('count', 0)
                 data.setdefault('depth', depth)
