@@ -1,11 +1,14 @@
 """Code for explicit (tabular) construction on product dynamics.""" 
 from __future__ import annotations
 
-from typing import Any, Iterable, Mapping, Protocol, Union, Optional, cast
+import random
+from typing import Any, Iterable, Mapping, Protocol, Optional, Sequence, Union
+from typing import cast
 from uuid import uuid1
 
 import attr
 import networkx as nx
+import numpy as np
 
 from diss import Edge, Concept, Node, Player, SampledPath, State
 from diss import DemoPrefixTree as PrefixTree
@@ -79,6 +82,7 @@ def product_dag(
 
 
 def empirical_psat(tree: PrefixTree, concept: Concept) -> float:
+    # TODO: Use monitor...
     leaves = (tree.is_leaf(n) for n in tree.nodes())
     accepted = total = 0
     for leaf in leaves:
@@ -91,14 +95,42 @@ def empirical_psat(tree: PrefixTree, concept: Concept) -> float:
 
 @attr.frozen
 class ProductMC:
+    tree: PrefixTree
+    concept: MonitorableConcept
     policy: TabularPolicy 
 
     @property
     def edge_probs(self) -> dict[Edge, float]:
-        ...
+        edges = cast(Iterable[Edge], self.policy.dag.edges)
+        return {e: self.policy.prob(*e) for e in edges}
 
     def sample(self, pivot: Node, win: bool) -> SampledPath:
-        ...
+        policy = self.policy
+        if policy.psat(pivot) == 0:
+            return None  # Impossible to realize is_sat label.
+
+        path = list(self.tree.prefix(pivot))
+        mstate = self.concept.monitor
+        for dstate in path:
+            mstate = mstate.update(dstate)
+        state = (dstate, mstate, len(path))
+
+        sample_prob: float = 1
+        while (moves := list(policy.dag.neighbors(state))):
+            # Apply bayes rule to get Pr(s' | is_sat, s).
+            priors = np.array([policy.prob(state, m) for m in moves])
+            likelihoods = np.array([policy.psat(m) for m in moves])
+            normalizer = policy.psat(state)
+
+            if not win:
+                likelihoods = 1 - likelihoods
+                normalizer = 1 - normalizer
+
+            probs = cast(Sequence[float], priors * likelihoods / normalizer)
+            prob, state = random.choices(list(zip(probs, moves)), probs)[0]
+            sample_prob *= prob
+            path.append(state)
+        return path, sample_prob
  
     @staticmethod
     def construct(
@@ -110,4 +142,9 @@ class ProductMC:
         """Constructs a tabular policy by unrolling of dynamics/concept."""
         dag = product_dag(concept, tree, dyn, max_depth)
         psat = empirical_psat(tree, concept)
-        return ProductMC(TabularPolicy.from_psat(dag, psat))
+
+        return ProductMC(
+                tree=tree,
+                concept=concept,
+                policy=TabularPolicy.from_psat(dag, psat),
+        )

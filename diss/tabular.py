@@ -70,34 +70,6 @@ class TabularPolicy:
             return np.log(prob) if log else prob  # type: ignore
         return lprob if log else np.exp(lprob)  # type: ignore
 
-    def log_probs(self, path: Path) -> list[float]:
-        pairwise = zip(path, path[1:])
-        return [self.prob(n, m) for n, m in pairwise]
-
-    def extend(self, path: Path, max_len: int, is_sat: bool, initial_moves: frozenset[State]) -> Optional[Path]:
-        path = list(path)
-        node = path[-1] if path else self.root 
-        if self.psat(node) == 0:
-            return None  # Impossible to realize is_sat label.
-
-
-        moves = list(initial_moves)  # Fix order of moves.
-        while moves and (len(path) < max_len):
-            # Apply bayes rule to get Pr(s' | is_sat, s).
-            priors = np.array([self.prob(node, m) for m in moves])
-            likelihoods = np.array([self.psat(m) for m in moves])
-            normalizer = self.psat(node)
-
-            if not is_sat:
-                likelihoods = 1 - likelihoods
-                normalizer = 1 - normalizer
-
-            probs = cast(Sequence[float], priors * likelihoods / normalizer)
-            node = random.choices(moves, probs)[0]
-            path.append(node)
-            moves = list(self.dag.neighbors(node))
-        return path 
-
     @staticmethod
     def from_psat(unrolled: nx.DiGraph, psat: float) -> TabularPolicy:
         @lru_cache(maxsize=3)
