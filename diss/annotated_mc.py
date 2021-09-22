@@ -18,13 +18,12 @@ class AnnotatedMarkovChain(Protocol):
         """Returns the probablity of edges in the demo prefix tree."""
         ...
 
-    def sample(self, pivot: Node, max_len: int, win: bool) -> SampledPath:
-        """Sample a path conditioned on pivot, max_size, and is_sat.
+    def sample(self, pivot: Node, win: bool) -> SampledPath:
+        """Sample a path conditioned on pivot and win.
 
         Arguments:
           - pivot: Last node in the prefix tree that the sampled path 
                    passes through.
-          - max_size: Maximum length of the sampled path.
           - win: Determines if sampled path results in ego winning.
 
         Returns:

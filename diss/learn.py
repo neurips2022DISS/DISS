@@ -11,6 +11,15 @@ from diss import Node, Demos, Path
 from diss import DemoPrefixTree as PrefixTree
 
 
+__all__ = [
+    'Concept', 
+    'ExampleSamplerFact', 
+    'LabeledExamples', 
+    'Identify', 
+    'search',
+]
+
+
 Examples = frozenset[Any]
 
 
@@ -38,7 +47,7 @@ class LabeledExamples:
 class Concept(Protocol):
     size: int
 
-    def __contains__(self, val: Any) -> bool:
+    def __contains__(self, path: Path) -> bool:
         ...
 
 
@@ -47,7 +56,7 @@ class Concept(Protocol):
 ###############################################################################
 
 Identify = Callable[[LabeledExamples], Concept]
-MarkovChainFact = Callable[[Concept, PrefixTree, int], MarkovChain]
+MarkovChainFact = Callable[[Concept, PrefixTree], MarkovChain]
 ExampleSamplerFact = Callable[
     [Demos],  # Concept, PrefixTree, max_len
     Callable[[Concept], LabeledExamples]
@@ -121,28 +130,25 @@ def surprisal(chain: MarkovChain, tree: PrefixTree) -> float:
 class GradientGuidedSampler:
     tree: PrefixTree
     to_chain: MarkovChainFact
-    max_len: int
     prev: Optional[LabeledExamples] = None
     prev_prob: float = 1e-1  # Prob of outputting prev example.
 
     @staticmethod
-    def from_demos(demos: Demos, to_chain: MarkovChainFact, max_len: int) -> GradientGuidedSampler:
+    def from_demos(demos: Demos, to_chain: MarkovChainFact) -> GradientGuidedSampler:
         tree = PrefixTree.from_demos(demos)
-        if max_len is None:
-            max_len = tree.max_len
-        return GradientGuidedSampler(tree, to_chain, max_len)
+        return GradientGuidedSampler(tree, to_chain)
 
     def __call__(self, concept: Concept) -> LabeledExamples:
         if (self.prev is not None) and (random.random() < self.prev_prob):
             return self.prev
-        tree, max_len = self.tree, self.max_len
-        chain = self.to_chain(concept, tree, self.max_len)
+        tree = self.tree
+        chain = self.to_chain(concept, tree)
         grad = surprisal_grad(chain, tree)
         while sum(grad) > 0:
             node = random.choices(range(len(grad)), grad)[0]  # Sample node.
 
             win = grad[node] > 0  # Target label.
-            sample = chain.sample(pivot=node, max_len=max_len, win=not win)
+            sample = chain.sample(pivot=node, win=not win)
             if sample is None:
                 grad[node] = 0  # Don't try this node again.
                 continue

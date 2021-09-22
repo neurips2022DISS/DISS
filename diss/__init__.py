@@ -1,10 +1,7 @@
-from typing import Any, Literal, Mapping, Sequence, Union
+from typing import Any, Literal, Mapping, Sequence, Union, Protocol
 
 State = Any
 Player = Literal['ego', 'env']
-EgoMoves = frozenset[State]
-EnvMoves = Mapping[State, float]
-Moves = Union[EgoMoves, EnvMoves]
 Path = Sequence[State]
 Demo = Sequence[tuple[State, Player]]
 Demos = Sequence[Demo]
@@ -13,17 +10,18 @@ Edge = tuple[int, int]
 
 from diss.prefix_tree import *
 from diss.annotated_mc import *
+from diss.learn import *
 
 __all__ = [
     'AnnotatedMarkovChain',
     'Demo',
     'Demos',
     'DemoPrefixTree',
+    'Concept',
     'Edge',
-    'EgoMoves',
-    'EnvMoves',
-    'Moves',
+    'MonitorState',
     'Path',
     'Player',
+    'SampledPath',
     'State',
 ]
