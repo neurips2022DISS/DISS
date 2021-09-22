@@ -55,16 +55,21 @@ ExampleSamplerFact = Callable[
 
 
 def surprisal_grad(chain: MarkovChain, tree: PrefixTree) -> list[float]:
+    conform_prob: float
+    dS: list[float]
     # TODO: Remove recursion and base on numpy.
+
+    dS = (max(tree.nodes()) + 1) * [0.0]
     edge_probs = chain.edge_probs 
-    deviate_probs = {}
+    deviate_probs: dict[int, float] = {}
     for n in tree.nodes():
         kids = tree.tree.neighbors(n)
-        deviate_probs[n] = 1 - sum(edge_probs[n, k] for k in kids)
+        conform_prob = sum(edge_probs[n, k] for k in kids)
+        deviate_probs[n] = 1 - conform_prob 
 
-    dS: list[float] = (max(tree.nodes()) + 1) * [0.0]
 
     def compute_dS(node: Node) -> dict[int, float]:
+        reach_probs: dict[int, float]
         kids = list(tree.tree.neighbors(node))
 
         # Compute recursive reach probabilities.
