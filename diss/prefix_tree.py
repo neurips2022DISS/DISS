@@ -95,4 +95,3 @@ class DemoPrefixTree:
 
         max_len = max(map(len, paths))
         return DemoPrefixTree(tree=tree, max_len=max_len)
-
