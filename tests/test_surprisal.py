@@ -1,8 +1,10 @@
 from __future__ import annotations
 
 import attr
+import numpy as np
 
 from diss import DemoPrefixTree, Edge, Node, SampledPath
+from diss.learn import surprisal, surprisal_grad
 
 
 @attr.frozen
@@ -43,11 +45,18 @@ def test_surprisal():
     ]]
     tree = DemoPrefixTree.from_demos(demos)
     chain = UniformMC.from_tree(tree)
-    path, prob = chain.sample(pivot=0, max_len=10, win=True) 
-    assert len(path) == 10
-    assert path[-1] is True
+    loss = surprisal(chain, tree)
+    assert loss == np.log(2) * 4
 
-    chain.edge_probs
-
-def test_surprisal_grad():
-    ...
+    expected = {
+        6: -1,
+        5: 0,  # Exhausted
+    }
+    grad = {
+        tree.state(node): dS for node, dS in enumerate(surprisal_grad(chain, tree))
+    }
+    for node, dS in enumerate(surprisal_grad(chain, tree)):
+        state = tree.state(node)
+        if state in expected:
+            assert dS == expected[state]
+    breakpoint()

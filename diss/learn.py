@@ -57,7 +57,8 @@ ExampleSamplerFact = Callable[
 def surprisal_grad(chain: MarkovChain, tree: PrefixTree) -> list[float]:
     # TODO: Remove recursion and base on numpy.
     edge_probs = chain.edge_probs 
-    dS: list[float] = max(tree.nodes()) * [0.0]
+    dS: list[float] = (max(tree.nodes()) + 1) * [0.0]
+    pdeviate: dict[Node, float] = {}
 
     def compute_dS(node: Node) -> dict[Node, float]:
         kids = tree.tree.neighbors(node)
@@ -65,32 +66,34 @@ def surprisal_grad(chain: MarkovChain, tree: PrefixTree) -> list[float]:
             return {node: 1}
 
         reach_probs = {}
+        pconform = 0
         for kid in kids:
             pkid = reach_probs[kid] = edge_probs[node, kid]
-            if tree.is_ego(node):
-                dS[kid] -= pkid * tree.count(kid)  # Deviate contribution.
-
-            for node2, reachp in compute_dS(kid).items():
-                reachp = reach_probs[node2] = pkid * reachp
+            pconform += pkid
+            for node2, preach in compute_dS(kid).items():
+                preach = reach_probs[node2] = pkid * preach
                 if tree.is_ego(node):
-                    dS[node2] += (1 / pkid - 1) * reachp
+                    delta = (1 / pkid - 1) * preach * tree.count(kid) * pdeviate[kid]
+                    dS[node2] += (1 / pkid - 1) * preach * tree.count(kid)
+
+        pdeviate[node] = 1 - pconform
+        dS[node] -= pdeviate[node] * tree.count(node)  # Deviate contribution.
 
         return reach_probs
+    
+    compute_dS(0)
      
     # Zero out any exhausted nodes.
-    for node in tree.nodes():
-        if tree.is_leaf(node) and tree.unused_moves(node):
-            continue
-        dS[node] = 0
-
     return list(dS)
 
 
 def surprisal(chain: MarkovChain, tree: PrefixTree) -> float:
     edge_probs = chain.edge_probs
     surprise = 0
-    for (_, node), edgep in edge_probs.items():
-        surprise -= tree.count(node) * np.log(edgep)
+    for (node, move), edgep in edge_probs.items():
+        if not tree.is_ego(node):
+            continue
+        surprise -= tree.count(move) * np.log(edgep)
     return surprise 
 
 

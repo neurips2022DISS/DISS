@@ -88,7 +88,7 @@ class DemoPrefixTree:
         tree.remove_node(0)   # Node added by networkx.
         nx.relabel_nodes(
             G=tree,
-            mapping={n: n-1 for n in range(len(tree.nodes))}, 
+            mapping={n: n-1 for n in tree.nodes}, 
             copy=False,
         )
 
