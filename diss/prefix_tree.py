@@ -5,7 +5,7 @@ from typing import Any, Iterable, Optional, Sequence, cast
 import attr
 import networkx as nx
 
-from diss import Demo, Demos, Moves, Node, Path, State
+from diss import Demo, Demos, Node, Path, Player, State
 
 
 __all__ = ["DemoPrefixTree"]
@@ -39,14 +39,7 @@ class DemoPrefixTree:
         return cast(int, self.tree.nodes[node]['count'])
 
     def is_ego(self, node: int) -> bool:
-        return isinstance(self.moves(node), frozenset)
-
-    def moves(self, node: int) -> Moves:
-        return cast(Moves, self.tree.nodes[node]['moves'])
-
-    def unused_moves(self, node: int) -> frozenset[State]:
-        neighbors = map(self.state, self.tree.neighbors(node))
-        return frozenset(self.moves(node)) - frozenset(neighbors)
+        return 'ego' == cast(Player, self.tree.nodes[node]['player'])
 
     def is_leaf(self, node: int) -> bool:
         return self.tree.out_degree(node) == 0
@@ -93,14 +86,12 @@ class DemoPrefixTree:
         )
 
         for demo in demos:
-            for depth, (state, moves) in enumerate(demo):
+            for depth, (state, player) in enumerate(demo):
                 node: int = 0 if depth == 0 else transition(tree, node, state)
                 data = tree.nodes[node]
+                data.update({'depth': depth, 'player': player})
                 data.setdefault('count', 0)
-                data.setdefault('depth', depth)
-                data.setdefault('moves', type(moves)())
                 data['count'] += 1
-                data['moves'] |= moves
 
         max_len = max(map(len, paths))
         return DemoPrefixTree(tree=tree, max_len=max_len)

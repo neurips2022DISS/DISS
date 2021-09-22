@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from collections import defaultdict
+
 import attr
 import numpy as np
 from pytest import approx
@@ -14,13 +16,13 @@ class UniformMC:
 
     @property
     def edge_probs(self) -> dict[Edge, float]:
+        state_edge_probs = defaultdict(lambda: 1/2, {
+            (5, 3): 2/3, (5, 4): 1/3, (2, 0): 2/3, (2, 1): 1/3
+        })
         edge_probs = {}
         for (parent, kid) in self.tree.edges():
-            moves = self.tree.moves(parent)
-            if isinstance(moves, frozenset):  # Ego move
-                edge_probs[parent, kid] = 1/2
-            else:
-                edge_probs[parent, kid] = moves[self.tree.state(kid)]
+            state_edge = self.tree.state(parent), self.tree.state(kid)
+            edge_probs[parent, kid] = state_edge_probs[state_edge]
         return edge_probs
 
     def sample(self, pivot: Node, max_len: int, win: bool) -> SampledPath:
@@ -40,16 +42,16 @@ class UniformMC:
 
 def test_surprisal():
     demos = [[
-        (6, frozenset({5, 4})),
-        (5, {3: 2/3, 4: 1/3}),
-        (3, frozenset({1, 2})),
-        (1, frozenset()),
+        (6, 'ego'),
+        (5, 'env'),
+        (3, 'ego'),
+        (1, 'ego'),
     ], [
-        (6, frozenset({5, 4})),
-        (5, {3: 2/3, 4: 1/3}),
-        (4, frozenset({0, 2, 10})), # Adds an extra move.
-        (2, {0: 2/3, 1: 1/3}),
-        (0, frozenset()),
+        (6, 'ego'),
+        (5, 'env'),
+        (4, 'ego'),
+        (2, 'env'),
+        (0, 'ego'),
     ]]
     tree = DemoPrefixTree.from_demos(demos)
     chain = UniformMC.from_tree(tree)

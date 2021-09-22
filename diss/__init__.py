@@ -1,12 +1,12 @@
-from typing import Any, Mapping, Sequence, Union
-
+from typing import Any, Literal, Mapping, Sequence, Union
 
 State = Any
+Player = Literal['ego', 'env']
 EgoMoves = frozenset[State]
 EnvMoves = Mapping[State, float]
 Moves = Union[EgoMoves, EnvMoves]
 Path = Sequence[State]
-Demo = Sequence[tuple[State, Moves]]
+Demo = Sequence[tuple[State, Player]]
 Demos = Sequence[Demo]
 Node = int  # Node of prefix tree.
 Edge = tuple[int, int]
@@ -24,5 +24,6 @@ __all__ = [
     'EnvMoves',
     'Moves',
     'Path',
+    'Player',
     'State',
 ]
