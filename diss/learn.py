@@ -57,27 +57,42 @@ ExampleSamplerFact = Callable[
 def surprisal_grad(chain: MarkovChain, tree: PrefixTree) -> list[float]:
     # TODO: Remove recursion and base on numpy.
     edge_probs = chain.edge_probs 
+    deviate_probs = {}
+    for n in tree.nodes():
+        kids = tree.tree.neighbors(n)
+        deviate_probs[n] = 1 - sum(edge_probs[n, k] for k in kids)
+
     dS: list[float] = (max(tree.nodes()) + 1) * [0.0]
-    pdeviate: dict[Node, float] = {}
 
-    def compute_dS(node: Node) -> dict[Node, float]:
-        kids = tree.tree.neighbors(node)
-        if not kids:
-            return {node: 1}
+    def compute_dS(node: Node) -> dict[int, float]:
+        kids = list(tree.tree.neighbors(node))
 
-        reach_probs = {}
-        pconform = 0
-        for kid in kids:
-            pkid = reach_probs[kid] = edge_probs[node, kid]
-            pconform += pkid
-            for node2, preach in compute_dS(kid).items():
-                preach = reach_probs[node2] = pkid * preach
-                if tree.is_ego(node):
-                    delta = (1 / pkid - 1) * preach * tree.count(kid) * pdeviate[kid]
-                    dS[node2] += (1 / pkid - 1) * preach * tree.count(kid)
+        # Compute recursive reach probabilities.
+        reach_probs = {node: 1}
+        for k in tree.tree.neighbors(node):
+            reach_probs.update(compute_dS(k).items())
 
-        pdeviate[node] = 1 - pconform
-        dS[node] -= pdeviate[node] * tree.count(node)  # Deviate contribution.
+        parent = tree.parent(node)
+        if parent is None:  # Root doesn't do anything.
+            return reach_probs
+ 
+        # Take into account traversing edge.
+        edge_prob = edge_probs[parent, node]
+        for node2 in reach_probs:
+            reach_probs[node2] *= edge_prob
+
+        if not tree.is_ego(parent):  # Ignore non-decision edges for dS.
+            return reach_probs
+      
+        # Conform contribution.
+        for node2, reach_prob in reach_probs.items():
+            weight = tree.count(node) * (1 / edge_prob - 1) * reach_prob
+            if not tree.is_leaf(node2):
+                weight *= deviate_probs[node2]
+            dS[node2] += weight 
+
+        # Deviate contribution.
+        dS[parent] -= tree.count(parent) * deviate_probs[parent]
 
         return reach_probs
     
