@@ -33,8 +33,11 @@ class MonitorableConcept(Concept):
 
 
 class MonitorState(Protocol):
-    state: Any
-    accepts: bool
+    @property
+    def state(self) -> Any: ...
+
+    @property
+    def accepts(self) -> Any: ...
 
     def update(self, symbol: Any) -> MonitorState: ...
 

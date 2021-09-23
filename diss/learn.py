@@ -45,10 +45,10 @@ class LabeledExamples:
 
 
 class Concept(Protocol):
-    size: int
+    @property
+    def size(self) -> float: ...
 
-    def __contains__(self, path: Path) -> bool:
-        ...
+    def __contains__(self, path: Path) -> bool: ...
 
 
 ###############################################################################
