@@ -69,7 +69,7 @@ def test_surprisal():
 
     }
     grad = {
-        tree.state(node): dS 
+        tree.state(node): -dS 
         for node, dS in enumerate(surprisal_grad(chain, tree))
     }
     assert grad == expected

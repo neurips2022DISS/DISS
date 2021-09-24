@@ -104,10 +104,10 @@ def surprisal_grad(chain: MarkovChain, tree: PrefixTree) -> list[float]:
             weight = tree.count(node) * (1 / edge_prob - 1) * reach_prob
             if not tree.is_leaf(node2):
                 weight *= deviate_probs[node2]
-            dS[node2] += weight 
+            dS[node2] -= weight 
 
         # Deviate contribution.
-        dS[parent] -= tree.count(parent) * deviate_probs[parent]
+        dS[parent] += tree.count(parent) * deviate_probs[parent]
 
         return reach_probs
     
