@@ -6,6 +6,7 @@ import dfa
 from diss import DemoPrefixTree, Edge, Node, SampledPath, Player
 from diss.product_mc import ProductMC, Moves  
 from diss.dfa_concept import DFAConcept
+from diss import search, GradientGuidedSampler
 
 
 @attr.frozen
@@ -67,5 +68,13 @@ def test_productmc():
     )
 
     assert Counter(chain.edge_probs.values()) == {
-        1/3: 3, 2/3: 3, 1/2: 8, 1.0: 5
+        1/3: 1, 2/3: 2, 1/2: 3
     }
+    sampler = GradientGuidedSampler.from_demos(
+        demos=demos,
+        to_chain=lambda c, t: ProductMC.construct(
+            concept=c, tree=t, dyn=dyn, max_depth=None
+        ),
+    )
+    #sampler(bot)
+

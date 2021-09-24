@@ -16,6 +16,7 @@ __all__ = [
     'ExampleSamplerFact', 
     'LabeledExamples', 
     'Identify', 
+    'GradientGuidedSampler',
     'search',
 ]
 
@@ -64,7 +65,6 @@ ExampleSamplerFact = Callable[
 
 
 def surprisal_grad(chain: MarkovChain, tree: PrefixTree) -> list[float]:
-    # TODO: note this gradient is negated....
     conform_prob: float
     dS: list[float]
     # TODO: Remove recursion and base on numpy.

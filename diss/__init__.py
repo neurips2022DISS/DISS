@@ -24,4 +24,5 @@ __all__ = [
     'Player',
     'SampledPath',
     'State',
+    'search',
 ]

@@ -23,6 +23,7 @@ class DemoPrefixTree:
     """Data structure representing the prefix tree of the demonstrations."""
     tree: nx.DiGraph
     max_len: int
+    root: int = 0
 
     def parent(self, node: int) -> Optional[Node]:
         if node == 0:

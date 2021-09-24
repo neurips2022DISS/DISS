@@ -98,11 +98,15 @@ class ProductMC:
     tree: PrefixTree
     concept: MonitorableConcept
     policy: TabularPolicy 
+    tree2policy: dict[Node, State]
 
     @property
     def edge_probs(self) -> dict[Edge, float]:
-        edges = cast(Iterable[Edge], self.policy.dag.edges)
-        return {e: self.policy.prob(*e) for e in edges}
+        edge_probs = {}
+        for tree_edge in self.tree.tree.edges:
+            dag_edge = (self.tree2policy[s] for s in tree_edge)
+            edge_probs[tree_edge] = self.policy.prob(*dag_edge)
+        return edge_probs
 
     def sample(self, pivot: Node, win: bool) -> SampledPath:
         policy = self.policy
@@ -130,6 +134,8 @@ class ProductMC:
             prob, state = random.choices(list(zip(probs, moves)), probs)[0]
             sample_prob *= prob
             path.append(state)
+        del path[:-1] # Remove dummy win/lose state.
+
         return path, sample_prob
  
     @staticmethod
@@ -142,9 +148,25 @@ class ProductMC:
         """Constructs a tabular policy by unrolling of dynamics/concept."""
         dag = product_dag(concept, tree, dyn, max_depth)
         psat = empirical_psat(tree, concept)
+        policy = TabularPolicy.from_psat(dag, psat)
+
+        # Need to associcate each tree stree with a policy state.
+        stack = [(tree.root, policy.root)]
+        tree2policy = {}
+        while stack:
+            tstate, pstate = stack.pop()
+            tree2policy[tstate] = pstate
+
+            # Compute local mapping from dynamics transition to next pstate.
+            move = {s[0]: s for s in policy.dag.neighbors(pstate)}
+            for tstate2 in tree.tree.neighbors(tstate):
+                dstate = tree.state(tstate2)  # Dynamics state.
+                pstate2 = move[dstate]
+                stack.append((tstate2, pstate2))
 
         return ProductMC(
                 tree=tree,
                 concept=concept,
-                policy=TabularPolicy.from_psat(dag, psat),
+                policy=policy,
+                tree2policy=tree2policy,
         )
