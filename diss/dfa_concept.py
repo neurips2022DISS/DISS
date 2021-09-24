@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from typing import Callable 
 
 import attr
@@ -51,12 +53,12 @@ class DFAConcept:
             def accepts(self) -> bool:
                 return graph[self.state][0]
 
-            def update(self, state: State) -> dfa.State:
+            def update(self, state: State) -> DFAMonitor:
                 symbol = sensor(state)
-                return graph[self.state][1][symbol]
+                return DFAMonitor(graph[self.state][1][symbol])
 
         return DFAConcept(lang, sensor, size, DFAMonitor())
 
     def __contains__(self, path: Path) -> bool:
         word = list(map(self.sensor, path))
-        return self.dfa.label(self.sensor(path))
+        return self.dfa.label(word)

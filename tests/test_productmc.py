@@ -1,3 +1,5 @@
+from collections import Counter
+
 import attr
 import dfa
 
@@ -11,11 +13,11 @@ class ExplicitDynamics:
     start: int
     graph: dict[int, Moves]
 
-    def moves(state: int) -> Moves:
-        return self.graph[int]
+    def moves(self, state: int) -> Moves:
+        return self.graph[state]
 
-    def player(state: int) -> Player:
-        is_ego = isinstance(self.graph[int], frozenset)
+    def player(self, state: int) -> Player:
+        is_ego = isinstance(self.graph[state], frozenset)
         return 'ego' if is_ego else 'env' 
 
 
@@ -47,7 +49,7 @@ def test_productmc():
     )
     empty_lang = dfa.DFA(
         start=False,
-        inputs={0, 1},
+        inputs=range(7),
         label=lambda _: False, 
         transition=lambda *_: False,
     )
@@ -60,6 +62,10 @@ def test_productmc():
     chain = ProductMC.construct(
         concept=bot, 
         tree=tree,
-        dyn=ExplicitDynamics,
+        dyn=dyn,
         max_depth=None,
     )
+
+    assert Counter(chain.edge_probs.values()) == {
+        1/3: 3, 2/3: 3, 1/2: 8, 1.0: 5
+    }
