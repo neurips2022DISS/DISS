@@ -170,10 +170,10 @@ class GradientGuidedSampler:
 def search(
     demos: Demos, 
     to_concept: Identify,
-    sample_fact: ExampleSamplerFact,
+    sampler_fact: ExampleSamplerFact,
 ) -> Iterable[Concept]:
     """Perform demonstration informed gradiented guided search."""
-    example_sampler = sample_fact(demos)
+    example_sampler = sampler_fact(demos)
 
     examples = LabeledExamples()
     while True:

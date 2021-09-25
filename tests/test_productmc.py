@@ -50,20 +50,16 @@ def test_productmc():
     )
     empty_lang = dfa.DFA(
         start=False,
-        inputs=range(7),
+        inputs={True, False},
         label=lambda _: False, 
         transition=lambda *_: False,
     )
 
-    bot = DFAConcept.from_dfa(
-        lang=empty_lang,
-        sensor=lambda s: s,
-    )
+    def sensor(s):
+        return s == 1
 
-    top = DFAConcept.from_dfa(
-        lang=~empty_lang,
-        sensor=lambda s: s,
-    )
+    bot = DFAConcept.from_dfa(lang=empty_lang, sensor=sensor)
+    top = DFAConcept.from_dfa(lang=~empty_lang, sensor=sensor)
 
     chain = ProductMC.construct(
         concept=top, 
@@ -78,20 +74,27 @@ def test_productmc():
     assert Counter(chain.policy.prob(*e) for e in chain.policy.dag.edges) == {
         1/3: 3, 2/3: 3, 1/2: 8, 1: 5
     }
-    sampler = GradientGuidedSampler.from_demos(
-        demos=demos,
-        to_chain=lambda c, t: ProductMC.construct(
-            concept=c, tree=t, dyn=dyn, max_depth=None
-        ),
-    )
 
-    example1 = sampler(top)
-    assert example1.positive == set()
-    assert len(example1.negative) == 1
+    def sampler_factory(demos):
+        return GradientGuidedSampler.from_demos(
+            demos=demos,
+            to_chain=lambda c, t: ProductMC.construct(
+                concept=c, tree=t, dyn=dyn, max_depth=None
+            ),
+        )
 
-    example2 = sampler(bot)
-    assert example2.negative == set()
-    assert len(example2.positive) == 1
+    sampler = sampler_factory(demos)
 
-    example12 = example1 @ example2
-    assert len(example12.positive) == len(example12.negative) == 1
+    data1 = sampler(top)
+    assert data1.positive == set()
+    assert len(data1.negative) == 1
+
+    data2 = sampler(bot)
+    assert data2.negative == set()
+    assert len(data2.positive) == 1
+
+    data12 = data1 @ data2
+    assert len(data12.positive) == len(data12.negative) == 1
+ 
+    concept = DFAConcept.from_examples(data12, sensor)
+    assert len(concept.dfa.states()) >= 2
