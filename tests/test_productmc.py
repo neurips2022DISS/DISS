@@ -93,8 +93,18 @@ def test_productmc():
     assert data2.negative == set()
     assert len(data2.positive) == 1
 
-    data12 = data1 @ data2
-    assert len(data12.positive) == len(data12.negative) == 1
+    data3 = data1 @ data2
+    assert len(data3.positive) == len(data3.negative) == 1
+
+    def to_concept(examples):
+        if examples.size == 0:
+            return bot
+        return DFAConcept.from_examples(examples, sensor)
  
-    concept = DFAConcept.from_examples(data12, sensor)
+    concept = to_concept(data3)
     assert len(concept.dfa.states()) >= 2
+
+    dfa_search = search(demos, to_concept, sampler_factory)
+    concept1 = next(dfa_search)
+    concept2 = next(dfa_search)
+
