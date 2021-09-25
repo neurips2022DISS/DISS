@@ -117,7 +117,12 @@ class ProductMC:
 
         path = list(self.tree.prefix(pivot))
         sample_prob: float = 1
-        while (moves := list(policy.dag.neighbors(state))):
+
+        # Make sure to deviate from prefix tree at pivot.
+        moves = set(policy.dag.neighbors(state)) - \
+            {self.tree2policy[s] for s in self.tree.tree.neighbors(pivot)}
+
+        while moves:
             # Apply bayes rule to get Pr(s' | is_sat, s).
             priors = np.array([policy.prob(state, m) for m in moves])
             likelihoods = np.array([policy.psat(m) for m in moves])
@@ -133,6 +138,7 @@ class ProductMC:
 
             # Note: win/lose are strings so the below still works...
             path.append(state[0])    # Ignore policy state details.
+            moves = list(policy.dag.neighbors(state))
 
         del path[-1]                 # Remove dummy win/lose state.
         return path, sample_prob

@@ -145,6 +145,7 @@ class GradientGuidedSampler:
         tree = self.tree
         chain = self.to_chain(concept, tree)
         grad = surprisal_grad(chain, tree)
+
         while any(grad) > 0:
             weights = [abs(x) for x in grad]
             node = random.choices(range(len(grad)), weights)[0]  # Sample node.

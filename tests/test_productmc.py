@@ -57,11 +57,16 @@ def test_productmc():
 
     bot = DFAConcept.from_dfa(
         lang=empty_lang,
-        sensor=lambda s: 0,
+        sensor=lambda s: s,
+    )
+
+    top = DFAConcept.from_dfa(
+        lang=~empty_lang,
+        sensor=lambda s: s,
     )
 
     chain = ProductMC.construct(
-        concept=bot, 
+        concept=top, 
         tree=tree,
         dyn=dyn,
         max_depth=None,
@@ -70,11 +75,20 @@ def test_productmc():
     assert Counter(chain.edge_probs.values()) == {
         1/3: 1, 2/3: 2, 1/2: 3
     }
+    assert Counter(chain.policy.prob(*e) for e in chain.policy.dag.edges) == {
+        1/3: 3, 2/3: 3, 1/2: 8, 1: 5
+    }
     sampler = GradientGuidedSampler.from_demos(
         demos=demos,
         to_chain=lambda c, t: ProductMC.construct(
             concept=c, tree=t, dyn=dyn, max_depth=None
         ),
     )
-    sampler(bot)
 
+    example1 = sampler(top)
+    assert example1.positive == set()
+    assert len(example1.negative) == 1
+
+    example2 = sampler(bot)
+    assert example2.negative == set()
+    assert len(example2.positive) == 1
