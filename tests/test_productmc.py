@@ -92,3 +92,6 @@ def test_productmc():
     example2 = sampler(bot)
     assert example2.negative == set()
     assert len(example2.positive) == 1
+
+    example12 = example1 @ example2
+    assert len(example12.positive) == len(example12.negative) == 1
