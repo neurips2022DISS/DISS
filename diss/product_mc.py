@@ -110,15 +110,12 @@ class ProductMC:
 
     def sample(self, pivot: Node, win: bool) -> SampledPath:
         policy = self.policy
-        if policy.psat(pivot) == 0:
+        state = self.tree2policy[pivot]
+
+        if policy.psat(state) == int(not win):
             return None  # Impossible to realize is_sat label.
 
         path = list(self.tree.prefix(pivot))
-        mstate = self.concept.monitor
-        for dstate in path:
-            mstate = mstate.update(dstate)
-        state = (dstate, mstate, len(path))
-
         sample_prob: float = 1
         while (moves := list(policy.dag.neighbors(state))):
             # Apply bayes rule to get Pr(s' | is_sat, s).
@@ -133,9 +130,11 @@ class ProductMC:
             probs = cast(Sequence[float], priors * likelihoods / normalizer)
             prob, state = random.choices(list(zip(probs, moves)), probs)[0]
             sample_prob *= prob
-            path.append(state)
-        del path[:-1] # Remove dummy win/lose state.
 
+            # Note: win/lose are strings so the below still works...
+            path.append(state[0])    # Ignore policy state details.
+
+        del path[-1]                 # Remove dummy win/lose state.
         return path, sample_prob
  
     @staticmethod

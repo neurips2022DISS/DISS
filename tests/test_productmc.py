@@ -76,5 +76,5 @@ def test_productmc():
             concept=c, tree=t, dyn=dyn, max_depth=None
         ),
     )
-    #sampler(bot)
+    sampler(bot)
 

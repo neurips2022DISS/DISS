@@ -145,10 +145,12 @@ class GradientGuidedSampler:
         tree = self.tree
         chain = self.to_chain(concept, tree)
         grad = surprisal_grad(chain, tree)
-        while sum(grad) > 0:
-            node = random.choices(range(len(grad)), grad)[0]  # Sample node.
+        while any(grad) > 0:
+            weights = [abs(x) for x in grad]
+            node = random.choices(range(len(grad)), weights)[0]  # Sample node.
 
-            win = grad[node] > 0  # Target label.
+            win = grad[node] < 0  # Target label.
+
             sample = chain.sample(pivot=node, win=not win)
             if sample is None:
                 grad[node] = 0  # Don't try this node again.
