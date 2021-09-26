@@ -63,8 +63,9 @@ class DFAConcept:
                 return graph[self.state][0]
 
             def update(self, state: State) -> DFAMonitor:
+                """Assumes stuttering semantics for unknown transitions."""
                 symbol = sensor(state)
-                return DFAMonitor(graph[self.state][1][symbol])
+                return DFAMonitor(graph[self.state][1].get(symbol))
 
         return DFAConcept(lang, sensor, size, DFAMonitor())
 
