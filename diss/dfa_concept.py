@@ -32,6 +32,9 @@ class DFAConcept:
     size: float
     monitor: MonitorState
 
+    def __repr__(self) -> str:
+        return str(dfa.dfa2dict(self.dfa))
+
     @staticmethod
     def from_examples(data: LabeledExamples, sensor: Sensor) -> DFAConcept:
         # Convert to correct alphabet.
@@ -65,7 +68,8 @@ class DFAConcept:
             def update(self, state: State) -> DFAMonitor:
                 """Assumes stuttering semantics for unknown transitions."""
                 symbol = sensor(state)
-                return DFAMonitor(graph[self.state][1].get(symbol))
+                transitions = graph[self.state][1]
+                return DFAMonitor(transitions.get(symbol, self.state))
 
         return DFAConcept(lang, sensor, size, DFAMonitor())
 

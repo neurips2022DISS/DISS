@@ -112,18 +112,19 @@ class ProductMC:
         policy = self.policy
         state = self.tree2policy[pivot]
 
-        if policy.psat(state) == int(not win):
+        if policy.psat(state) == float(not win):
             return None  # Impossible to realize is_sat label.
 
-        path = list(self.tree.prefix(pivot))
         sample_prob: float = 1
+        path = list(self.tree.prefix(pivot))
 
         # Make sure to deviate from prefix tree at pivot.
-        moves = list(
-            set(policy.dag.neighbors(state)) - 
-            {self.tree2policy[s] for s in self.tree.tree.neighbors(pivot)}
-        )
-
+        tmp = set(policy.dag.neighbors(state)) - \
+              {self.tree2policy[s] for s in self.tree.tree.neighbors(pivot)}
+        moves = list(m for m in tmp if policy.psat(m) != float(not win))
+        if not moves:
+            return None  # Couldn't deviate
+        
         # Sample suffix to path conditioned on win.
         while moves:
             # Apply bayes rule to get Pr(s' | is_sat, s).

@@ -60,7 +60,7 @@ Identify = Callable[[LabeledExamples], Concept]
 MarkovChainFact = Callable[[Concept, PrefixTree], MarkovChain]
 ExampleSamplerFact = Callable[
     [Demos],  # Concept, PrefixTree, max_len
-    Callable[[Concept], LabeledExamples]
+    Callable[[Concept], tuple[LabeledExamples, float]]
 ]
 
 
@@ -131,17 +131,13 @@ def surprisal(chain: MarkovChain, tree: PrefixTree) -> float:
 class GradientGuidedSampler:
     tree: PrefixTree
     to_chain: MarkovChainFact
-    prev: Optional[LabeledExamples] = None
-    prev_prob: float = 1e-1  # Prob of outputting prev example.
 
     @staticmethod
     def from_demos(demos: Demos, to_chain: MarkovChainFact) -> GradientGuidedSampler:
         tree = PrefixTree.from_demos(demos)
         return GradientGuidedSampler(tree, to_chain)
 
-    def __call__(self, concept: Concept) -> LabeledExamples:
-        if (self.prev is not None) and (random.random() < self.prev_prob):
-            return self.prev
+    def __call__(self, concept: Concept) -> tuple[LabeledExamples, float]:
         tree = self.tree
         chain = self.to_chain(concept, tree)
         grad = surprisal_grad(chain, tree)
@@ -157,13 +153,16 @@ class GradientGuidedSampler:
                 grad[node] = 0  # Don't try this node again.
                 continue
 
-            path, _ = sample  # Currently don't use sample probability.
+            path, sample_prob = sample  
             path = tuple(path) # Make immutable before sending out example.
 
+            examples: LabeledExamples
             if win:
-                return LabeledExamples(positive=[path])  # type: ignore
+                examples = LabeledExamples(positive=[path])  # type: ignore
             else:
-                return LabeledExamples(negative=[path])  # type: ignore
+                examples = LabeledExamples(negative=[path])  # type: ignore
+            sample_prob *= weights[node] / sum(weights)
+            return examples, sample_prob 
         raise RuntimeError("Gradient can't be use to guide search?!")
 
 
@@ -171,12 +170,12 @@ def search(
     demos: Demos, 
     to_concept: Identify,
     sampler_fact: ExampleSamplerFact,
-) -> Iterable[Concept]:
+) -> Iterable[tuple[LabeledExamples, Concept]]:
     """Perform demonstration informed gradiented guided search."""
     example_sampler = sampler_fact(demos)
 
     examples = LabeledExamples()
     while True:
         concept = to_concept(examples)
-        yield concept
-        examples @= example_sampler(concept)
+        yield examples, concept
+        examples @= example_sampler(concept)[0]
