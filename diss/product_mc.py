@@ -119,9 +119,12 @@ class ProductMC:
         sample_prob: float = 1
 
         # Make sure to deviate from prefix tree at pivot.
-        moves = set(policy.dag.neighbors(state)) - \
+        moves = list(
+            set(policy.dag.neighbors(state)) - 
             {self.tree2policy[s] for s in self.tree.tree.neighbors(pivot)}
+        )
 
+        # Sample suffix to path conditioned on win.
         while moves:
             # Apply bayes rule to get Pr(s' | is_sat, s).
             priors = np.array([policy.prob(state, m) for m in moves])
