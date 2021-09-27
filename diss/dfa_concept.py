@@ -10,7 +10,7 @@ import numpy as np
 from dfa_identify import find_dfas
 from scipy.special import softmax
 
-from diss import State, Path, LabeledExamples
+from diss import State, Path, LabeledExamples, ConceptIdException
 from diss.product_mc import MonitorState
 
 
@@ -46,6 +46,9 @@ class DFAConcept:
         pos = [list(map(sensor, x)) for x in data.positive]
         neg = [list(map(sensor, x)) for x in data.negative]
         langs = fn.take(ENUM_MAX, find_dfas(pos, neg))
+        if not langs:
+            raise ConceptIdException
+
         concepts = [DFAConcept.from_dfa(lang, sensor) for lang in langs]
         weights = softmax([-c.size / TEMP for c in concepts])
         return random.choices(concepts, weights)[0]  # type: ignore

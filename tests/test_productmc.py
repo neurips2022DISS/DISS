@@ -22,6 +22,13 @@ class ExplicitDynamics:
         return 'ego' if is_ego else 'env' 
 
 
+def assert_consistent(data, concept):
+    if concept is None:
+        return
+    assert all(x in concept for x in data.positive)
+    assert not any(x in concept for x in data.negative)
+
+
 def test_productmc():
     demos = [[
         (6, 'ego'),
@@ -105,6 +112,13 @@ def test_productmc():
  
     dfa_search = search(demos, to_concept, sampler_factory)
     data1, concept1 = next(dfa_search)
+    assert_consistent(data1, concept1)
+
     data2, concept2 = next(dfa_search)
+    assert_consistent(data2, concept2)
+
     data3, concept3 = next(dfa_search)
+    assert_consistent(data3, concept3)
+
     data4, concept4 = next(dfa_search)
+    assert_consistent(data4, concept4)

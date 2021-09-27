@@ -14,10 +14,11 @@ from diss.learn import *
 
 __all__ = [
     'AnnotatedMarkovChain',
+    'Concept',
+    'ConceptIdException',
     'Demo',
     'Demos',
     'DemoPrefixTree',
-    'Concept',
     'Edge',
     'LabeledExamples',
     'MonitorState',

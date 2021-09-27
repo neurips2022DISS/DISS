@@ -55,7 +55,7 @@ draw = ["pydot (>=1.4,<2.0)"]
 
 [[package]]
 name = "dfa-identify"
-version = "2.0.0"
+version = "3.0.1"
 description = "Python library for identifying (learning) DFAs (automata) from labeled examples."
 category = "dev"
 optional = false
@@ -359,7 +359,7 @@ python-versions = "*"
 [metadata]
 lock-version = "1.1"
 python-versions = ">=3.9,<3.10"
-content-hash = "43d3eb6839111b67bb08332a9f0639c9535f994d17f15ded5ffcbac50041c3d5"
+content-hash = "2669bbd94da0d048e0769c87d29e2d95b6102970108e46056ec560e69285516d"
 
 [metadata.files]
 atomicwrites = [
@@ -383,8 +383,8 @@ dfa = [
     {file = "dfa-2.3.1.tar.gz", hash = "sha256:fc6bd6f7a7d904874f77ea5c99609dad12ecaefc89baf006a50b152339115905"},
 ]
 dfa-identify = [
-    {file = "dfa_identify-2.0.0-py3-none-any.whl", hash = "sha256:9b34bdde33c6d97667252b53faaca7ec063d9d025058ad17850cfef4e1d35bd7"},
-    {file = "dfa_identify-2.0.0.tar.gz", hash = "sha256:140810a19ac0fb4a1859f0da6a23a5938b976952e126e314f562664fc8286da3"},
+    {file = "dfa_identify-3.0.1-py3-none-any.whl", hash = "sha256:e9928bf8d25dd31be8125cf1a5c903e2fd9540c4348f792f04242b203b207af0"},
+    {file = "dfa_identify-3.0.1.tar.gz", hash = "sha256:6d446b8381180fa36ed4a2ff4e173eec9087ff6721a1f0ca87f888a22bfe47d7"},
 ]
 execnet = [
     {file = "execnet-1.9.0-py2.py3-none-any.whl", hash = "sha256:a295f7cc774947aac58dde7fdc85f4aa00c42adf5d8f5468fc630c1acf30a142"},

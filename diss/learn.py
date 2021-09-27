@@ -13,6 +13,7 @@ from diss import DemoPrefixTree as PrefixTree
 
 __all__ = [
     'Concept', 
+    'ConceptIdException',
     'ExampleSamplerFact', 
     'LabeledExamples', 
     'Identify', 
@@ -28,6 +29,9 @@ Examples = frozenset[Any]
 class LabeledExamples:
     positive: Examples = attr.ib(converter=frozenset, factory=frozenset)
     negative: Examples = attr.ib(converter=frozenset, factory=frozenset)
+
+    def __attrs_post_init__(self) -> None:
+        assert len(self.positive & self.negative) == 0
 
     @property
     def size(self) -> int:
@@ -166,16 +170,27 @@ class GradientGuidedSampler:
         raise RuntimeError("Gradient can't be use to guide search?!")
 
 
+class ConceptIdException(Exception):
+    pass
+
+
 def search(
     demos: Demos, 
     to_concept: Identify,
     sampler_fact: ExampleSamplerFact,
-) -> Iterable[tuple[LabeledExamples, Concept]]:
+) -> Iterable[tuple[LabeledExamples, Optional[Concept]]]:
     """Perform demonstration informed gradiented guided search."""
     example_sampler = sampler_fact(demos)
 
     examples = LabeledExamples()
+    example_path = []
     while True:
-        concept = to_concept(examples)
-        yield examples, concept
-        examples @= example_sampler(concept)[0]
+        try:
+            concept = to_concept(examples)
+            yield examples, concept
+            examples @= example_sampler(concept)[0]
+            example_path.append(examples)
+
+        except ConceptIdException:
+            examples = example_path.pop()  # Roll back!
+            yield examples, None
