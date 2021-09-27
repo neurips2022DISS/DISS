@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import random
 from typing import Callable 
 
 import attr
@@ -42,12 +43,9 @@ class DFAConcept:
         pos = [list(map(sensor, x)) for x in data.positive]
         neg = [list(map(sensor, x)) for x in data.negative]
         langs = fn.take(10, find_dfas(pos, neg))
-        lang = langs[0]
-
-        # Try to fine sparse version.
-        n_states = len(lang.states())
-
-        return DFAConcept.from_dfa(lang, sensor)
+        concepts = [DFAConcept.from_dfa(lang, sensor) for lang in langs]
+        weights = [c.size for c in concepts]
+        return random.choices(concepts, weights)[0]
   
     @staticmethod
     def from_dfa(lang: DFA, sensor: Sensor) -> DFAConcept:
@@ -60,7 +58,7 @@ class DFAConcept:
         graph, start = dfa.dfa2dict(lang)
         state_bits = np.log2(len(graph))
         n_edges = count_nonstuttering(graph)
-        size = state_bits * (1 + 2 * n_edges * np.log2(len(lang.inputs)))
+        size = state_bits * (1 + 2 * n_edges * np.log2(len(lang.inputs))) + 1
 
         # Wrap graph dfa to conform to DFA Monitor API.
         @attr.frozen
