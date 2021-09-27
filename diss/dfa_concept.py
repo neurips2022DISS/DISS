@@ -43,9 +43,9 @@ class DFAConcept:
         # Convert to correct alphabet.
         pos = [list(map(sensor, x)) for x in data.positive]
         neg = [list(map(sensor, x)) for x in data.negative]
-        langs = fn.take(10, find_dfas(pos, neg))
+        langs = fn.take(40, find_dfas(pos, neg))
         concepts = [DFAConcept.from_dfa(lang, sensor) for lang in langs]
-        weights = softmax([c.size for c in concepts])
+        weights = softmax([-c.size for c in concepts])
         return random.choices(concepts, weights)[0]
   
     @staticmethod
