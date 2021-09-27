@@ -19,7 +19,7 @@ __all__ = ['DFAConcept', 'Sensor']
 
 DFA = dfa.DFA
 Sensor = Callable[[dfa.State], dfa.Letter] 
-TEMP = 3e-2
+TEMP = 3e-1
 ENUM_MAX = 40
 
 
