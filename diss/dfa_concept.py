@@ -41,6 +41,10 @@ class DFAConcept:
         pos = [list(map(sensor, x)) for x in data.positive]
         neg = [list(map(sensor, x)) for x in data.negative]
         lang = find_dfa(pos, neg)
+
+        # Try to fine sparse version.
+        size = len(lang.states())
+
         return DFAConcept.from_dfa(lang, sensor)
   
     @staticmethod
