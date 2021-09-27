@@ -48,7 +48,7 @@ class DFAConcept:
         langs = fn.take(ENUM_MAX, find_dfas(pos, neg))
         concepts = [DFAConcept.from_dfa(lang, sensor) for lang in langs]
         weights = softmax([-c.size / TEMP for c in concepts])
-        return random.choices(concepts, weights)[0]
+        return random.choices(concepts, weights)[0]  # type: ignore
   
     @staticmethod
     def from_dfa(lang: DFA, sensor: Sensor) -> DFAConcept:
