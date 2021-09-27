@@ -30,9 +30,6 @@ class LabeledExamples:
     positive: Examples = attr.ib(converter=frozenset, factory=frozenset)
     negative: Examples = attr.ib(converter=frozenset, factory=frozenset)
 
-    def __attrs_post_init__(self) -> None:
-        assert len(self.positive & self.negative) == 0
-
     @property
     def size(self) -> int:
         return self.dist(LabeledExamples())

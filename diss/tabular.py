@@ -46,7 +46,7 @@ class TabularPolicy:
         return self.dag.nodes[node]['entropy']  # type: ignore
 
     def psat(self, node: State = None) -> float:
-        return np.exp(self.lsat(node))  # type: ignore
+        return max(0, min(1, np.exp(self.lsat(node))))  # type: ignore
 
     def lsat(self, node: State = None) -> float:
         if node is None:

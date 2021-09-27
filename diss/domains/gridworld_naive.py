@@ -13,8 +13,8 @@ Action = Literal['↑', '↓', '←', '→']
 ACTION2VEC = {
     '→': (1, 0),
     '←': (-1, 0),
-    '↑': (0, 1),
-    '↓': (0, -1),
+    '↑': (0, -1),
+    '↓': (0, 1),
 }
 
 
@@ -54,25 +54,37 @@ class GridWorldNaive:
             state = (state.x, state.y)
         return self.overlay.get(state, 'white')
 
+    def clip(self, state: State) -> State:
+        x = min(self.dim, max(1, state.x))
+        y = min(self.dim, max(1, state.y))
+        return attr.evolve(state, x=x, y=y)
+
     def moves(self, state: State) -> Moves:
         if self.player(state) == 'ego':
-            return frozenset(attr.evolve(state, action=a) for a in ACTION2VEC)
-        return {state.succeed: 1 - self.slip_prob, state.slip: self.slip_prob}
+            moves = (attr.evolve(state, action=a) for a in ACTION2VEC)
+            moves = (m for m in moves if self.clip(m.succeed) == m.succeed)
+            return frozenset(moves)
+
+        succeed, slip = self.clip(state.succeed), self.clip(state.slip)
+        if state.action == '↓':
+            return {succeed: 1}
+        return {succeed: 1 - self.slip_prob, slip: self.slip_prob}
 
     def player(self, state: State) -> Player:
-        return 'env' if state.action is None else 'ego'
+        return 'ego' if state.action is None else 'env'
 
     def to_string(self, state: GridWorldState) -> str:
         from blessings import Terminal  # type: ignore
         term = Terminal()
         buff = ''
+        ego = 'x' if state.action is None else state.action
 
         def tile(point: tuple[int, int]) -> str:
-            content = 'x' if point == (state.x, state.y) else ' '
+            content = f' {ego} ' if point == (state.x, state.y) else '   '
             color = self.sensor(point)
-            return getattr(term, f'on_{color}')  # type: ignore
+            return getattr(term, f'on_{color}')(content)  # type: ignore
 
-        for x in range(1, 1 + self.dim):
-            row = ((x, y) for y in range(1, 1 + self.dim))
+        for y in range(1, 1 + self.dim):
+            row = ((x, y) for x in range(1, 1 + self.dim))
             buff += ''.join(map(tile, row)) + '\n'
         return buff

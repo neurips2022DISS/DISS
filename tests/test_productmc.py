@@ -6,7 +6,7 @@ import dfa
 from diss import DemoPrefixTree, Edge, Node, SampledPath, Player
 from diss.product_mc import ProductMC, Moves  
 from diss.dfa_concept import DFAConcept
-from diss import search, GradientGuidedSampler
+from diss import search, LabeledExamples, GradientGuidedSampler
 
 
 @attr.frozen
@@ -105,10 +105,14 @@ def test_productmc():
     data3 = data1 @ data2
     assert len(data3.positive) == len(data3.negative) == 1
 
-    def to_concept(examples):
-        if examples.size == 0:
+    def to_concept(data):
+        if data.size == 0:
             return bot
-        return DFAConcept.from_examples(examples, sensor)
+        data = LabeledExamples(
+            positive = [tuple(map(sensor, x)) for x in data.positive],
+            negative = [tuple(map(sensor, x)) for x in data.negative],
+        )
+        return DFAConcept.from_examples(data, sensor)
  
     dfa_search = search(demos, to_concept, sampler_factory)
     data1, concept1 = next(dfa_search)

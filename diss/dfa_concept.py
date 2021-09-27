@@ -41,11 +41,9 @@ class DFAConcept:
         return str(dfa.dfa2dict(self.dfa))
 
     @staticmethod
-    def from_examples(data: LabeledExamples, sensor: Sensor) -> DFAConcept:
+    def from_examples(data: LabeledExamples, sensor) -> DFAConcept:
         # Convert to correct alphabet.
-        pos = [list(map(sensor, x)) for x in data.positive]
-        neg = [list(map(sensor, x)) for x in data.negative]
-        langs = fn.take(ENUM_MAX, find_dfas(pos, neg))
+        langs = fn.take(ENUM_MAX, find_dfas(data.positive, data.negative))
         if not langs:
             raise ConceptIdException
 
@@ -85,4 +83,7 @@ class DFAConcept:
 
     def __contains__(self, path: Path) -> bool:
         word = list(map(self.sensor, path))
-        return self.dfa.label(word)
+        monitor = self.monitor
+        for x in word:
+            monitor = monitor.update(x)
+        return monitor.accepts
