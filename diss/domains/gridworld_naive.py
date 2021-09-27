@@ -19,17 +19,19 @@ ACTION2VEC = {
 
 @attr.frozen
 class GridWorldState:
-    y: int
     x: int
+    y: int
     action: Optional[Action] = None
 
     @property
     def succeed(self) -> GridWorldState:
-        ...
+        assert self.action is not None
+        dx, dy = ACTION2VEC[self.action]
+        return GridWorldState(x=self.x + dx, y=self.y + dy)
 
     @property
     def slip(self) -> GridWorldState:
-        ...
+        return attr.evolve(self, action='↓').succeed
 
  
 @attr.frozen
@@ -46,4 +48,5 @@ class GridWorldNaive:
             return frozenset(attr.evolve(state, action=a) for a in ACTION2VEC)
         return {state.succeed: 1 - self.slip_prob, state.slip: self.slip_prob}
 
-    def player(self, state: State) -> Player: ...
+    def player(self, state: State) -> Player:
+        return 'env' if state.action is None else 'ego'
