@@ -4,8 +4,9 @@ from typing import Callable
 
 import attr
 import dfa
+import funcy as fn
 import numpy as np
-from dfa_identify import find_dfa
+from dfa_identify import find_dfas
 
 from diss import State, Path, LabeledExamples
 from diss.product_mc import MonitorState
@@ -40,10 +41,11 @@ class DFAConcept:
         # Convert to correct alphabet.
         pos = [list(map(sensor, x)) for x in data.positive]
         neg = [list(map(sensor, x)) for x in data.negative]
-        lang = find_dfa(pos, neg)
+        langs = fn.take(10, find_dfas(pos, neg))
+        lang = langs[0]
 
         # Try to fine sparse version.
-        size = len(lang.states())
+        n_states = len(lang.states())
 
         return DFAConcept.from_dfa(lang, sensor)
   
