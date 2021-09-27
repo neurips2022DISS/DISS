@@ -29,6 +29,17 @@ optional = false
 python-versions = ">=3.6"
 
 [[package]]
+name = "blessings"
+version = "1.7"
+description = "A thin, practical wrapper around terminal coloring, styling, and positioning"
+category = "dev"
+optional = false
+python-versions = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*"
+
+[package.dependencies]
+six = "*"
+
+[[package]]
 name = "colorama"
 version = "0.4.4"
 description = "Cross-platform colored terminal text."
@@ -359,7 +370,7 @@ python-versions = "*"
 [metadata]
 lock-version = "1.1"
 python-versions = ">=3.9,<3.10"
-content-hash = "2669bbd94da0d048e0769c87d29e2d95b6102970108e46056ec560e69285516d"
+content-hash = "8580fc728f4ae3789c09e63a535fa0ac085c9ff8ca5634e03bd91d8568127a0e"
 
 [metadata.files]
 atomicwrites = [
@@ -373,6 +384,11 @@ attrs = [
 bidict = [
     {file = "bidict-0.21.3-py3-none-any.whl", hash = "sha256:2cce0d01eb3db9b3fa85db501c00aaa3389ee4cab7ef82178604552dfa943a1b"},
     {file = "bidict-0.21.3.tar.gz", hash = "sha256:d50bd81fae75e34198ffc94979a0eb0939ff9adb3ef32bcc93a913d8b3e3ed1d"},
+]
+blessings = [
+    {file = "blessings-1.7-py2-none-any.whl", hash = "sha256:caad5211e7ba5afe04367cdd4cfc68fa886e2e08f6f35e76b7387d2109ccea6e"},
+    {file = "blessings-1.7-py3-none-any.whl", hash = "sha256:b1fdd7e7a675295630f9ae71527a8ebc10bfefa236b3d6aa4932ee4462c17ba3"},
+    {file = "blessings-1.7.tar.gz", hash = "sha256:98e5854d805f50a5b58ac2333411b0482516a8210f23f43308baeb58d77c157d"},
 ]
 colorama = [
     {file = "colorama-0.4.4-py2.py3-none-any.whl", hash = "sha256:9f47eda37229f68eee03b24b9748937c7dc3868f906e8ba69fbcbdd3bc5dc3e2"},

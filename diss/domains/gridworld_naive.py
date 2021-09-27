@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-from typing import Any, Literal, Optional
+from itertools import product
+from typing import Any, Literal, Optional, Union
 
 import attr
 
@@ -15,6 +16,13 @@ ACTION2VEC = {
     '↑': (0, 1),
     '↓': (0, -1),
 }
+
+
+__all__ = [
+    'Action',
+    'GridWorldNaive',
+    'GridWorldState',
+]
 
 
 @attr.frozen
@@ -37,11 +45,14 @@ class GridWorldState:
 @attr.frozen
 class GridWorldNaive:
     dim: int
-    overlay: dict[State, Any]
+    start: GridWorldState
+    overlay: dict[tuple[int, int], str] = attr.ib(factory=dict)
     slip_prob: float = 1 / 32
 
-    def sensor(self, state: State) -> Any:
-        return self.overlay.get(state)
+    def sensor(self, state: Union[GridWorldState, tuple[int, int]]) -> Any:
+        if isinstance(state, GridWorldState):
+            state = (state.x, state.y)
+        return self.overlay.get(state, 'white')
 
     def moves(self, state: State) -> Moves:
         if self.player(state) == 'ego':
@@ -50,3 +61,18 @@ class GridWorldNaive:
 
     def player(self, state: State) -> Player:
         return 'env' if state.action is None else 'ego'
+
+    def to_string(self, state: GridWorldState) -> str:
+        from blessings import Terminal  # type: ignore
+        term = Terminal()
+        buff = ''
+
+        def tile(point: tuple[int, int]) -> str:
+            content = 'x' if point == (state.x, state.y) else ' '
+            color = self.sensor(point)
+            return getattr(term, f'on_{color}')  # type: ignore
+
+        for x in range(1, 1 + self.dim):
+            row = ((x, y) for y in range(1, 1 + self.dim))
+            buff += ''.join(map(tile, row)) + '\n'
+        return buff
