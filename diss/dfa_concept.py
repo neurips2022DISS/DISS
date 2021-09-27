@@ -19,12 +19,14 @@ __all__ = ['DFAConcept', 'Sensor']
 
 DFA = dfa.DFA
 Sensor = Callable[[dfa.State], dfa.Letter] 
+TEMP = 3e-2
+ENUM_MAX = 40
 
 
 def count_nonstuttering(graph: dfa.DFADict) -> int:
     count = 0
-    for state, kids in graph.items():
-        count += sum(1 for k in kids if k != state) 
+    for state, (_, kids) in graph.items():
+        count += sum(1 for k in kids.values() if k != state) 
     return count
 
 
@@ -43,9 +45,9 @@ class DFAConcept:
         # Convert to correct alphabet.
         pos = [list(map(sensor, x)) for x in data.positive]
         neg = [list(map(sensor, x)) for x in data.negative]
-        langs = fn.take(40, find_dfas(pos, neg))
+        langs = fn.take(ENUM_MAX, find_dfas(pos, neg))
         concepts = [DFAConcept.from_dfa(lang, sensor) for lang in langs]
-        weights = softmax([-c.size for c in concepts])
+        weights = softmax([-c.size / TEMP for c in concepts])
         return random.choices(concepts, weights)[0]
   
     @staticmethod

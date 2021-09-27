@@ -143,7 +143,7 @@ class GradientGuidedSampler:
         grad = surprisal_grad(chain, tree)
 
         while any(grad) > 0:
-            weights = [abs(x) for x in grad]
+            weights = [np.exp(abs(x)) for x in grad]
             node = random.choices(range(len(grad)), weights)[0]  # Sample node.
 
             win = grad[node] < 0  # Target label.
