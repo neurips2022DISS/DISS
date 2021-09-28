@@ -49,6 +49,8 @@ class DFAConcept:
             raise ConceptIdException
 
         concepts = [DFAConcept.from_dfa(lang, sensor) for lang in langs]
+        min_size = min(c.size for c in concepts)
+        concepts = [c for c in concepts if c.size == min_size]
         weights = softmax([-c.size / TEMP for c in concepts])
         return random.choices(concepts, weights)[0]  # type: ignore
   

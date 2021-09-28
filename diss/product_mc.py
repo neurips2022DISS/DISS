@@ -95,7 +95,7 @@ def empirical_psat(tree: PrefixTree, concept: Concept) -> float:
         demo = tree.prefix(leaf)
         count = tree.count(leaf)
         total += count
-        accepted = (demo in concept) * count
+        accepted += (demo in concept) * count
     return accepted / total
 
 
@@ -159,11 +159,18 @@ class ProductMC:
             tree: PrefixTree,
             dyn: Dynamics,
             max_depth: Optional[int],
+            rationality: Optional[float] = None,
+            psat: Optional[float] = None,
         ) -> ProductMC:
         """Constructs a tabular policy by unrolling of dynamics/concept."""
         dag = product_dag(concept, tree, dyn, max_depth)
-        psat = empirical_psat(tree, concept)
-        policy = TabularPolicy.from_psat(dag, psat)
+
+        if rationality is None:
+            if psat is None:
+                psat = empirical_psat(tree, concept)
+            policy = TabularPolicy.from_psat(dag, psat)
+        else:
+            policy = TabularPolicy.from_rationality(dag, rationality)
 
         # Need to associcate each tree stree with a policy state.
         stack = [(tree.root, policy.root)]

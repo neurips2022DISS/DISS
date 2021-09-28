@@ -79,7 +79,7 @@ class TabularPolicy:
         def f(rationality: float) -> float:
             return get_critic(rationality).psat() - psat
 
-        if f(0) > 0:
+        if f(0) >= 0:
             return get_critic(0)
 
         # Doubling trick.

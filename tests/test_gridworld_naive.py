@@ -54,7 +54,7 @@ def test_gridworld_smoke():
         return GradientGuidedSampler.from_demos(
             demos=demos,
             to_chain=lambda c, t: ProductMC.construct(
-                concept=c, tree=t, dyn=gw, max_depth=9
+                concept=c, tree=t, dyn=gw, max_depth=9, psat=0.8
             ),
         )
 
@@ -62,12 +62,12 @@ def test_gridworld_smoke():
         positive=[
             ('yellow',),
             ('yellow', 'yellow'),
+            ('blue', 'green', 'yellow'),
         ],
         negative=[
-            (), ('red',),
+            (), ('red',), ('red', 'red'),
             ('red', 'yellow'), ('yellow', 'red'),
-            ('red', 'yellow', 'red'),
-            ('yellow', 'red', 'red'),
+            ('yellow', 'yellow', 'red'),
         ]
     )
 
