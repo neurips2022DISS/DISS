@@ -89,7 +89,7 @@ def product_dag(
 
 def empirical_psat(tree: PrefixTree, concept: Concept) -> float:
     # TODO: Use monitor...
-    leaves = (tree.is_leaf(n) for n in tree.nodes())
+    leaves = (n for n in tree.nodes() if tree.is_leaf(n))
     accepted = total = 0
     for leaf in leaves:
         demo = tree.prefix(leaf)

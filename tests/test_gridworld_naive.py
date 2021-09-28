@@ -88,6 +88,9 @@ def test_gridworld_smoke():
     dfa_search = search(demos, to_concept, sampler_factory)
 
     data1, concept1 = next(dfa_search)
+    path1 = [x for x, _ in demos[0]]
+    assert path1 in concept1
+
     data2, concept2 = next(dfa_search)
     data3, concept3 = next(dfa_search)
     data4, concept4 = next(dfa_search)
