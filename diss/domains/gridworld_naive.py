@@ -31,11 +31,16 @@ class GridWorldState:
     y: int
     action: Optional[Action] = None
 
+    def __repr__(self) -> str:
+        if self.action is not None:
+            return self.action
+        return f'({self.x}, {self.y})'
+
     @property
     def succeed(self) -> GridWorldState:
         assert self.action is not None
         dx, dy = ACTION2VEC[self.action]
-        return GridWorldState(x=self.x + dx, y=self.y + dy)
+        return attr.evolve(self, x=self.x + dx, y=self.y + dy, action=None)
 
     @property
     def slip(self) -> GridWorldState:
@@ -51,6 +56,8 @@ class GridWorldNaive:
 
     def sensor(self, state: Union[GridWorldState, tuple[int, int]]) -> Any:
         if isinstance(state, GridWorldState):
+            if self.player(state) == 'env':
+                return 'white'  # Ignore environment nodes.
             state = (state.x, state.y)
         return self.overlay.get(state, 'white')
 

@@ -34,6 +34,10 @@ class LabeledExamples:
     def size(self) -> int:
         return self.dist(LabeledExamples())
 
+    def __repr__(self) -> str:
+        pos, neg = set(self.positive), set(self.negative)
+        return f'+: {pos}\n--------------\n-: {neg}'
+
     def __matmul__(self, other: LabeledExamples) -> LabeledExamples:
         return LabeledExamples(
             positive=(self.positive - other.negative) | other.positive,

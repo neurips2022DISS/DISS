@@ -2,6 +2,8 @@ from collections import Counter
 
 import dfa
 import funcy as fn
+from dfa.utils import find_subset_counterexample
+from dfa_identify import find_dfa
 
 from diss.product_mc import ProductMC
 from diss.dfa_concept import DFAConcept
@@ -62,29 +64,67 @@ def test_gridworld_smoke():
         positive=[
             ('yellow',),
             ('yellow', 'yellow'),
-            ('blue', 'green', 'yellow'),
+            #('blue', 'green', 'yellow'), # Demo
         ],
         negative=[
             (), ('red',), ('red', 'red'),
             ('red', 'yellow'), ('yellow', 'red'),
+            ('yellow', 'red', 'yellow'),
             ('yellow', 'yellow', 'red'),
         ]
     )
 
+    def partial_dfa(inputs):
+        def transition(s, c):
+            if s == 'dead' or c == 'red':
+                return 'dead'
+            elif s == 'wet' and c == 'yellow':
+                return 'dead'
+            elif s == 'wet' and c == 'green':
+                return 'dry'
+            elif s == 'dry' and c == 'yellow':
+                return 'recharge'
+            elif c == 'blue':
+                return 'wet'
+            return s
+           
+        return dfa.DFA(
+            start='dry',
+            inputs=inputs,
+            label=lambda s: s == 'recharge',
+            transition=transition
+        )
+
     def trace(path):
         return tuple(x for x in map(gw.sensor, path) if x != 'white')
+
 
     def to_concept(data):
         data = LabeledExamples(
             positive = [trace(x) for x in data.positive],
             negative = [trace(x) for x in data.negative],
         )
- 
         data @= base_examples
-        return DFAConcept.from_examples(data, gw.sensor)
 
-    to_concept(LabeledExamples())
- 
+        # CEGIS for subset.
+        for i in range(15):
+            mydfa = find_dfa(data.positive, data.negative) 
+            partial = partial_dfa(mydfa.inputs)
+            ce = find_subset_counterexample(mydfa, partial)
+            if ce is None:
+                break
+            data @= LabeledExamples(negative=[ce])
+
+            partial = partial_dfa(mydfa.inputs)
+            for k, lbl in enumerate(partial.transduce(ce)):
+                prefix = ce[:k]
+                if not lbl:
+                    data @= LabeledExamples(negative=[prefix])
+                else:
+                    data @= LabeledExamples(positive=[prefix])
+        
+        return DFAConcept.from_examples(data, gw.sensor) 
+
     dfa_search = search(demos, to_concept, sampler_factory)
 
     data1, concept1 = next(dfa_search)
@@ -93,6 +133,3 @@ def test_gridworld_smoke():
 
     data2, concept2 = next(dfa_search)
     data3, concept3 = next(dfa_search)
-    data4, concept4 = next(dfa_search)
-    data5, concept5 = next(dfa_search)
-    breakpoint()

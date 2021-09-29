@@ -1,12 +1,14 @@
 from __future__ import annotations
 
 import random
+from pprint import pformat
 from typing import Callable 
 
 import attr
 import dfa
 import funcy as fn
 import numpy as np
+from pysat.solvers import Minicard
 from dfa_identify import find_dfas
 from scipy.special import softmax
 
@@ -20,13 +22,21 @@ __all__ = ['DFAConcept', 'Sensor']
 DFA = dfa.DFA
 Sensor = Callable[[dfa.State], dfa.Letter] 
 TEMP = 3e-1
-ENUM_MAX = 40
+ENUM_MAX = 10
 
 
-def count_nonstuttering(graph: dfa.DFADict) -> int:
-    count = 0
+def remove_stutter(graph: dfa.DFADict) -> None:
     for state, (_, kids) in graph.items():
-        count += sum(1 for k in kids.values() if k != state) 
+        tokens = list(kids.keys())
+        kids2 = {k: v for k, v in kids.items() if v != state}
+        kids.clear()
+        kids.update(kids2)
+
+
+def count_edges(graph: dfa.DFADict) -> int:
+    count = 0
+    for _, (_, kids) in graph.items():
+        count += sum(1 for k in kids.values()) 
     return count
 
 
@@ -38,21 +48,23 @@ class DFAConcept:
     monitor: MonitorState
 
     def __repr__(self) -> str:
-        return str(dfa.dfa2dict(self.dfa))
+        graph, start = dfa.dfa2dict(self.dfa)
+        remove_stutter(graph)
+        return f'{start}\n{pformat(graph)}'
 
     @staticmethod
     def from_examples(data: LabeledExamples, sensor: Sensor) -> DFAConcept:
         # Convert to correct alphabet.
-        langs = find_dfas(data.positive, data.negative)  # type: ignore
+
+        langs = find_dfas(data.positive, data.negative, minimum_ns_edges=True)  # type: ignore
         langs = fn.take(ENUM_MAX, langs)
         if not langs:
             raise ConceptIdException
 
         concepts = [DFAConcept.from_dfa(lang, sensor) for lang in langs]
-        min_size = min(c.size for c in concepts)
+        min_size = min(c.size for c in concepts) 
         concepts = [c for c in concepts if c.size == min_size]
-        weights = softmax([-c.size / TEMP for c in concepts])
-        return random.choices(concepts, weights)[0]  # type: ignore
+        return random.choices(concepts)[0]  # type: ignore
   
     @staticmethod
     def from_dfa(lang: DFA, sensor: Sensor) -> DFAConcept:
@@ -63,8 +75,9 @@ class DFAConcept:
         # Measure size by encoding number of nodes and 
         # number of non-stuttering labeled edges.
         graph, start = dfa.dfa2dict(lang)
+        remove_stutter(graph)
         state_bits = np.log2(len(graph))
-        n_edges = count_nonstuttering(graph)
+        n_edges = count_edges(graph)
         size = state_bits * (1 + 2 * n_edges * np.log2(len(lang.inputs))) + 1
 
         # Wrap graph dfa to conform to DFA Monitor API.
