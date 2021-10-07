@@ -21,6 +21,9 @@ mypy = "^0.910"
 dfa = "^2.2.1"
 dfa-identify = {git = "https://github.com/mvcisback/dfa-identify", rev = "selection"}
 blessings = "^1.7"
+jupyter = "^1.0.0"
+matplotlib = "^3.4.3"
+seaborn = "^0.11.2"
 
 [build-system]
 requires = ["poetry>=0.12"]
