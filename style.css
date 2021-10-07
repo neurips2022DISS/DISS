@@ -1,0 +1,72 @@
+#title h1 {
+    font-size: 2em;
+}
+
+.reveal h1 {
+    font-size: 1em;
+}
+
+.reveal h2 {
+    font-size: 1em;
+}
+
+#authors {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-around;
+}
+
+#authors figure img {
+    height: 5em;  
+    border-radius: 50%; 
+    padding: 0 2em;
+}
+
+.reveal .slides .structure-of-talk {
+    height: auto;
+}
+
+.structure-of-talk div {
+    margin-bottom: 1em;
+    flex-direction: column;
+    align-items: center;
+    
+}
+
+.structure-of-talk h2 strong {
+    color: #9bff9b;
+}
+
+
+.structure-of-talk h2 {
+    color: white;
+    background-color: #4c4c4c;
+    font-size: 1.2em;
+    margin-top: 0;
+    padding-bottom: 0.4em;
+    text-decoration: none;
+    width: 25em;
+    padding-top: 0.4em;
+}
+
+.structure-of-talk li {
+    font-size: 1em;
+    padding: 0;
+}
+
+.structure-of-talk div div {
+    flex-direction: row;
+}
+
+.structure-of-talk ol {
+    width: 60%;
+}
+
+.reveal .recipe .slide-background-content {
+    opacity: 0.1;
+}
+
+.reveal section {
+    flex-direction: column;
+    align-items: center;
+}

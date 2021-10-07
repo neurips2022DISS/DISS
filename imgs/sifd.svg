@@ -1,0 +1,119 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg baseProfile="full" height="8.05em" version="1.1" width="8.05em" xmlns="http://www.w3.org/2000/svg" xmlns:ev="http://www.w3.org/2001/xml-events" xmlns:xlink="http://www.w3.org/1999/xlink">
+  <defs>
+    <style type="text/css">
+<![CDATA[
+    .background { fill: white; }
+    .line { stroke: firebrick; stroke-width: .1mm; }
+    .lava { fill: #ff8b8b; }
+    .dry { fill: #f4a460; }
+    .water { fill: #afafff; }
+    .recharge {fill: #ffff00; }
+    .normal {fill: white; }
+    rect {
+       stroke: black;
+       stroke-width: 0.5px;
+    }
+
+    .agent {
+      r: 0.3em;
+      fill: black;
+      stroke-width: 2;
+      animation: blinker 4s linear infinite;
+      animation: move 5s ease infinite;
+    }
+
+    @keyframes blinker {
+       50% {
+         opacity: 0.5;
+       }
+    }
+
+@keyframes move {
+16.666666666666664% {
+    transform: translate(0em, -1em);
+}
+33.33333333333333% {
+    transform: translate(0em, -2em);
+}
+50.0% {
+    transform: translate(0em, -3em);
+}
+66.66666666666666% {
+    transform: translate(0em, -4em);
+}
+83.33333333333334% {
+    transform: translate(-1em, -4em);
+}
+100.0% {
+    transform: translate(-2em, -4em);
+}
+}]]>    </style>
+  </defs>
+  <rect class="background" height="100%" width="100%" x="0" y="0"/>
+  <rect class="recharge" height="0.9em" width="0.9em" x="0.1em" y="0.1em"/>
+  <rect class="normal" height="0.9em" width="0.9em" x="0.1em" y="1.1em"/>
+  <rect class="lava" height="0.9em" width="0.9em" x="0.1em" y="2.1em"/>
+  <rect class="lava" height="0.9em" width="0.9em" x="0.1em" y="3.1em"/>
+  <rect class="normal" height="0.9em" width="0.9em" x="0.1em" y="4.1em"/>
+  <rect class="normal" height="0.9em" width="0.9em" x="0.1em" y="5.1em"/>
+  <rect class="lava" height="0.9em" width="0.9em" x="0.1em" y="6.1em"/>
+  <rect class="recharge" height="0.9em" width="0.9em" x="0.1em" y="7.1em"/>
+  <rect class="normal" height="0.9em" width="0.9em" x="1.1em" y="0.1em"/>
+  <rect class="normal" height="0.9em" width="0.9em" x="1.1em" y="1.1em"/>
+  <rect class="lava" height="0.9em" width="0.9em" x="1.1em" y="2.1em"/>
+  <rect class="lava" height="0.9em" width="0.9em" x="1.1em" y="3.1em"/>
+  <rect class="normal" height="0.9em" width="0.9em" x="1.1em" y="4.1em"/>
+  <rect class="normal" height="0.9em" width="0.9em" x="1.1em" y="5.1em"/>
+  <rect class="lava" height="0.9em" width="0.9em" x="1.1em" y="6.1em"/>
+  <rect class="lava" height="0.9em" width="0.9em" x="1.1em" y="7.1em"/>
+  <rect class="dry" height="0.9em" width="0.9em" x="2.1em" y="0.1em"/>
+  <rect class="normal" height="0.9em" width="0.9em" x="2.1em" y="1.1em"/>
+  <rect class="normal" height="0.9em" width="0.9em" x="2.1em" y="2.1em"/>
+  <rect class="normal" height="0.9em" width="0.9em" x="2.1em" y="3.1em"/>
+  <rect class="normal" height="0.9em" width="0.9em" x="2.1em" y="4.1em"/>
+  <rect class="normal" height="0.9em" width="0.9em" x="2.1em" y="5.1em"/>
+  <rect class="normal" height="0.9em" width="0.9em" x="2.1em" y="6.1em"/>
+  <rect class="dry" height="0.9em" width="0.9em" x="2.1em" y="7.1em"/>
+  <rect class="dry" height="0.9em" width="0.9em" x="3.1em" y="0.1em"/>
+  <rect class="normal" height="0.9em" width="0.9em" x="3.1em" y="1.1em"/>
+  <rect class="water" height="0.9em" width="0.9em" x="3.1em" y="2.1em"/>
+  <rect class="water" height="0.9em" width="0.9em" x="3.1em" y="3.1em"/>
+  <rect class="water" height="0.9em" width="0.9em" x="3.1em" y="4.1em"/>
+  <rect class="water" height="0.9em" width="0.9em" x="3.1em" y="5.1em"/>
+  <rect class="normal" height="0.9em" width="0.9em" x="3.1em" y="6.1em"/>
+  <rect class="dry" height="0.9em" width="0.9em" x="3.1em" y="7.1em"/>
+  <rect class="dry" height="0.9em" width="0.9em" x="4.1em" y="0.1em"/>
+  <rect class="normal" height="0.9em" width="0.9em" x="4.1em" y="1.1em"/>
+  <rect class="water" height="0.9em" width="0.9em" x="4.1em" y="2.1em"/>
+  <rect class="water" height="0.9em" width="0.9em" x="4.1em" y="3.1em"/>
+  <rect class="water" height="0.9em" width="0.9em" x="4.1em" y="4.1em"/>
+  <rect class="water" height="0.9em" width="0.9em" x="4.1em" y="5.1em"/>
+  <rect class="normal" height="0.9em" width="0.9em" x="4.1em" y="6.1em"/>
+  <rect class="dry" height="0.9em" width="0.9em" x="4.1em" y="7.1em"/>
+  <rect class="dry" height="0.9em" width="0.9em" x="5.1em" y="0.1em"/>
+  <rect class="normal" height="0.9em" width="0.9em" x="5.1em" y="1.1em"/>
+  <rect class="normal" height="0.9em" width="0.9em" x="5.1em" y="2.1em"/>
+  <rect class="normal" height="0.9em" width="0.9em" x="5.1em" y="3.1em"/>
+  <rect class="normal" height="0.9em" width="0.9em" x="5.1em" y="4.1em"/>
+  <rect class="normal" height="0.9em" width="0.9em" x="5.1em" y="5.1em"/>
+  <rect class="normal" height="0.9em" width="0.9em" x="5.1em" y="6.1em"/>
+  <rect class="dry" height="0.9em" width="0.9em" x="5.1em" y="7.1em"/>
+  <rect class="normal" height="0.9em" width="0.9em" x="6.1em" y="0.1em"/>
+  <rect class="normal" height="0.9em" width="0.9em" x="6.1em" y="1.1em"/>
+  <rect class="lava" height="0.9em" width="0.9em" x="6.1em" y="2.1em"/>
+  <rect class="lava" height="0.9em" width="0.9em" x="6.1em" y="3.1em"/>
+  <rect class="normal" height="0.9em" width="0.9em" x="6.1em" y="4.1em"/>
+  <rect class="normal" height="0.9em" width="0.9em" x="6.1em" y="5.1em"/>
+  <rect class="lava" height="0.9em" width="0.9em" x="6.1em" y="6.1em"/>
+  <rect class="lava" height="0.9em" width="0.9em" x="6.1em" y="7.1em"/>
+  <rect class="recharge" height="0.9em" width="0.9em" x="7.1em" y="0.1em"/>
+  <rect class="normal" height="0.9em" width="0.9em" x="7.1em" y="1.1em"/>
+  <rect class="lava" height="0.9em" width="0.9em" x="7.1em" y="2.1em"/>
+  <rect class="lava" height="0.9em" width="0.9em" x="7.1em" y="3.1em"/>
+  <rect class="normal" height="0.9em" width="0.9em" x="7.1em" y="4.1em"/>
+  <rect class="normal" height="0.9em" width="0.9em" x="7.1em" y="5.1em"/>
+  <rect class="lava" height="0.9em" width="0.9em" x="7.1em" y="6.1em"/>
+  <rect class="recharge" height="0.9em" width="0.9em" x="7.1em" y="7.1em"/>
+  <circle class="agent" cx="2.55em" cy="4.55em" r="0.3em"/>
+</svg>

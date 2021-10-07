@@ -1,0 +1,134 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
+
+<svg
+   xmlns:dc="http://purl.org/dc/elements/1.1/"
+   xmlns:cc="http://creativecommons.org/ns#"
+   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+   xmlns:svg="http://www.w3.org/2000/svg"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   width="212.72371mm"
+   height="46.880535mm"
+   viewBox="0 0 212.72371 46.880535"
+   version="1.1"
+   id="svg8"
+   inkscape:version="0.92.4 (5da689c313, 2019-01-14)"
+   sodipodi:docname="formal_methods.svg">
+  <defs
+     id="defs2" />
+  <sodipodi:namedview
+     id="base"
+     pagecolor="#ffffff"
+     bordercolor="#666666"
+     borderopacity="1.0"
+     inkscape:pageopacity="0.0"
+     inkscape:pageshadow="2"
+     inkscape:zoom="1.4"
+     inkscape:cx="290.20049"
+     inkscape:cy="55.752057"
+     inkscape:document-units="mm"
+     inkscape:current-layer="g924"
+     showgrid="false"
+     inkscape:window-width="2044"
+     inkscape:window-height="1030"
+     inkscape:window-x="2"
+     inkscape:window-y="25"
+     inkscape:window-maximized="1"
+     fit-margin-top="0"
+     fit-margin-left="0"
+     fit-margin-right="0"
+     fit-margin-bottom="0"
+     showguides="true"
+     inkscape:guide-bbox="true">
+    <sodipodi:guide
+       position="-185.86334,41.639083"
+       orientation="0,1"
+       id="guide2519"
+       inkscape:locked="false" />
+    <sodipodi:guide
+       position="87.952588,0.57239601"
+       orientation="1,0"
+       id="guide11348"
+       inkscape:locked="false" />
+  </sodipodi:namedview>
+  <metadata
+     id="metadata5">
+    <rdf:RDF>
+      <cc:Work
+         rdf:about="">
+        <dc:format>image/svg+xml</dc:format>
+        <dc:type
+           rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
+        <dc:title></dc:title>
+      </cc:Work>
+    </rdf:RDF>
+  </metadata>
+  <g
+     inkscape:label="Layer 1"
+     inkscape:groupmode="layer"
+     id="layer1"
+     transform="translate(-22.038795,-81.736814)">
+    <g
+       id="g924">
+      <g
+         id="g903">
+        <rect
+           style="opacity:1;fill:none;fill-opacity:1;stroke:#000000;stroke-width:1.14479566;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1"
+           id="rect815"
+           width="87.380196"
+           height="45.357765"
+           x="22.611193"
+           y="82.687187" />
+        <text
+           xml:space="preserve"
+           style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:10.58333302px;line-height:1.25;font-family:sans-serif;-inkscape-font-specification:'sans-serif, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-feature-settings:normal;text-align:center;letter-spacing:0px;word-spacing:0px;writing-mode:lr-tb;text-anchor:middle;fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.26458332"
+           x="65.767853"
+           y="102.72023"
+           id="text819"><tspan
+             sodipodi:role="line"
+             id="tspan817"
+             x="65.767853"
+             y="102.72023"
+             style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:10.58333302px;font-family:sans-serif;-inkscape-font-specification:'sans-serif, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-feature-settings:normal;text-align:center;writing-mode:lr-tb;text-anchor:middle;stroke-width:0.26458332">Formal</tspan><tspan
+             sodipodi:role="line"
+             x="65.767853"
+             y="115.94939"
+             style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:10.58333302px;font-family:sans-serif;-inkscape-font-specification:'sans-serif, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-feature-settings:normal;text-align:center;writing-mode:lr-tb;text-anchor:middle;stroke-width:0.26458332"
+             id="tspan821">Specification</tspan></text>
+      </g>
+      <g
+         id="g909">
+        <rect
+           style="opacity:1;fill:none;fill-opacity:1;stroke:#000000;stroke-width:1.14479578;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1"
+           id="rect815-2"
+           width="87.380196"
+           height="45.357765"
+           x="146.80991"
+           y="82.309212" />
+        <text
+           xml:space="preserve"
+           style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:10.58333302px;line-height:1.25;font-family:sans-serif;-inkscape-font-specification:'sans-serif, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-feature-settings:normal;text-align:center;letter-spacing:0px;word-spacing:0px;writing-mode:lr-tb;text-anchor:middle;fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.26458332"
+           x="189.96655"
+           y="102.34225"
+           id="text819-9"><tspan
+             sodipodi:role="line"
+             x="189.96655"
+             y="102.34225"
+             style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:10.58333302px;font-family:sans-serif;-inkscape-font-specification:'sans-serif, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-feature-settings:normal;text-align:center;writing-mode:lr-tb;text-anchor:middle;stroke-width:0.26458332"
+             id="tspan821-1">System</tspan><tspan
+             sodipodi:role="line"
+             x="189.96655"
+             y="115.57141"
+             style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:10.58333302px;font-family:sans-serif;-inkscape-font-specification:'sans-serif, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-feature-settings:normal;text-align:center;writing-mode:lr-tb;text-anchor:middle;stroke-width:0.26458332"
+             id="tspan897">Model</tspan></text>
+      </g>
+      <path
+         style="fill:currentColor;stroke:currentColor;stroke-width:0.03337346"
+         id="use1014"
+         d="m 117.32022,120.99577 h -0.0667 q -0.40046,0 -0.60072,-0.46723 v -16.21951 l 0.0334,-16.219489 q 0.33373,-0.43385 0.63408,-0.43385 0.43386,0 0.66747,0.5006 V 100.4377 h 21.2589 q 0.50061,0.26699 0.50061,0.66747 0,0.36711 -0.46724,0.6341 l -10.61275,0.0334 h -10.61276 l -0.0668,-0.0334 v 5.20626 l 0.0668,-0.0334 h 21.22551 q 0.0334,0.0334 0.10014,0.0667 0.0667,0.0334 0.1001,0.0668 0.0334,0.0334 0.0667,0.0667 0.0334,0.0334 0.10013,0.10012 0.0667,0.0668 0.0334,0.0668 -0.0334,0 0.0334,0.1335 0.0668,0.13349 0.0334,0.16686 0,0.43386 -0.50061,0.66747 h -21.2589 v 12.28145 q -0.26697,0.46722 -0.6007,0.46722 z"
+         inkscape:connector-curvature="0" />
+    </g>
+  </g>
+</svg>

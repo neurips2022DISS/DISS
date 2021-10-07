@@ -1,31 +1,28 @@
-# DISS
-Demonstration Informed Specification Search
+<p align="center">
+  <a href="https://revealjs.com">
+  <img src="https://hakim-static.s3.amazonaws.com/reveal-js/logo/v1/reveal-black-text.svg" alt="reveal.js" width="450">
+  </a>
+  <br><br>
+  <a href="https://github.com/hakimel/reveal.js/actions"><img src="https://github.com/hakimel/reveal.js/workflows/tests/badge.svg"></a>
+  <a href="https://slides.com/"><img src="https://s3.amazonaws.com/static.slid.es/images/slides-github-banner-320x40.png?1" alt="Slides" width="160" height="20"></a>
+</p>
 
-[![Build Status](https://cloud.drone.io/api/badges/mvcisback/diss/status.svg)](https://cloud.drone.io/mvcisback/diss)
-[![Docs](https://img.shields.io/badge/API-link-color)](https://mvcisback.github.io/diss)
-[![PyPI version](https://badge.fury.io/py/diss.svg)](https://badge.fury.io/py/diss)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+reveal.js is an open source HTML presentation framework. It enables anyone with a web browser to create fully featured and beautiful presentations for free. [Check out the live demo](https://revealjs.com/).
 
+The framework comes with a broad range of features including [nested slides](https://revealjs.com/vertical-slides/), [Markdown support](https://revealjs.com/markdown/), [Auto-Animate](https://revealjs.com/auto-animate/), [PDF export](https://revealjs.com/pdf-export/), [speaker notes](https://revealjs.com/speaker-view/), [LaTeX support](https://revealjs.com/math/), [syntax highlighted code](https://revealjs.com/code/) and much more.
 
-<!-- markdown-toc start - Don't edit this section. Run M-x markdown-toc-generate-toc again -->
-**Table of Contents**
+<h1>
+  <a href="https://revealjs.com/installation" style="font-size: 3em;">Get Started</a>
+</h1>
 
-- [Installation](#installation)
-- [Usage](#usage)
+## Documentation
+The full reveal.js documentation is available at [revealjs.com](https://revealjs.com).
 
-<!-- markdown-toc end -->
+## Online Editor
+Want to create your presentation using a visual editor? Try the official reveal.js presentation platform for free at [Slides.com](https://slides.com). It's made by the same people behind reveal.js.
 
-# Installation
+## License
 
-If you just need to use `diss`, you can just run:
+MIT licensed
 
-`$ pip install diss`
-
-For developers, note that this project uses the
-[poetry](https://poetry.eustace.io/) python package/dependency
-management tool. Please familarize yourself with it and then
-run:
-
-`$ poetry install`
-
-# Usage
+Copyright (C) 2011-2021 Hakim El Hattab, https://hakim.se
