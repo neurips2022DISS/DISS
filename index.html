@@ -896,7 +896,7 @@ Afolabi, et al. "People as sensors: Imputing maps from human actions." IROS `18.
                       \]
                     </div>
                     <p class="fragment">
-                        So we can summarize sets of actions ("meta"-actions).
+                        So we can summarize value of "pivoting" at a given node.
                     </p>
                 </section>
 
@@ -1106,46 +1106,32 @@ Afolabi, et al. "People as sensors: Imputing maps from human actions." IROS `18.
                 </section>
 
                 <section class="fancyp">
-                    <h1> likelihood <strong>factors</strong> through a function over 2T + 1 reals. </h1>
+                    <h1> Surprise <strong>factors</strong> through a function over pivot values. </h1>
                     <figure data-id="2">
                         <img style="height: 13em;" src="imgs/single_demo7.svg"/>
                     </figure>
 
                     <div class="fragment">
                         \[
-                           \widehat{l} : \mathbb{R}^{2T + 1} \to [0, 1]
+                           \widehat{h} : \mathbb{R}^{d} \to [0, 1]
                         \]
                     </div>
                     <div class="fragment">
                         \[
-                           \Pr(\text{demo}\mid \varphi) = \widehat{l}(\vec{V}_\varphi)
+                           h(\varphi) = \widehat{h}(\vec{V}_\varphi)
                         \]
                     </div>
-               </section>
-
-                <section class="fancyp">
-                    <h1 data-id="5" >
-                        Can we use gradient to guide specification search?
-                    </h1>
- 
-                    <figure data-id="2">
-                        <img style="height: 13em;" src="imgs/single_demo7.svg"/>
-                    </figure>
-
-                    <p data-id="5" class="fragment">
-                        Want to adjust value vector by $\eta\cdot \nabla \widehat{l}$.
-                    </p>
                </section>
 
                 <section class="fancyp" >
-                    <h1>Need to pull back changes in $V$ to $\varphi$.</h1>
+                    <h1>How does changing the specification change the pivot value?</h1>
                     <figure style="margin-top: 2em" >
                         <img style="height: 13em;" src="imgs/discrete_image.svg"/>
                     </figure>
                 </section>
 
                 <section class="fancyp" data-auto-animate>
-                    <h1>Each deviation's subtree <strong>summarized</strong> by V</h1>
+                    <h1>Each pivot's subtree <strong>summarized</strong> by V</h1>
                     <figure data-id="3">
                         <img style="height: 17em;" src="imgs/single_demo8.svg"/>
                     </figure>
@@ -1159,28 +1145,39 @@ Afolabi, et al. "People as sensors: Imputing maps from human actions." IROS `18.
                 </section>
 
                 <section class="fancyp" >
-                    <h1>Flipping value <strong>monotonically</strong> changes subtree value.</h1>
+                    <h1>Flipping value <strong>monotonically</strong> changes subtree value</h1>
                     <figure data-id="3">
                         <img style="height: 17em;" src="imgs/single_demo10.svg"/>
                     </figure>
+
                     <div style="fragment">
-                        \[V_3 < V_3'\]
+                        $V_3 < V_3'$
                     </div>
+
+                    <p style="width: 30em;" class="fragment">Can sample from <strong>$\pi$</strong> to generate high weight paths.</p>
+               </section>
+                <section class="fancyp" >
+                    <h1>Evidence that path is mis-labeled by candidate $\varphi$</h1>
+                   <figure style="margin-top: 0em" >
+                        <img style="height: 5em;" src="imgs/discrete_image.svg"/>
+                    </figure>
+                    <figure data-id="3">
+                        <img style="height: 6em;" src="imgs/single_demo10.svg"/>
+                    </figure>
+                    <ol>
+                        <li class="fragment">$|\nabla \widehat{h}|$ determines weight of evidence.</li>
+                        <li class="fragment">Old label given by $\nabla_i \widehat{h} < 0$.</li>
+                        <li class="fragment">New label given by $\nabla_i \widehat{h} > 0$.</li>
+                    </ol>
+ 
                </section>
 
-                <section class="fancyp" data-auto-animate>
-                    <h1 style="width: 30em;">Control <strong>step size</strong> by sampling more and higher weight paths</h1>
-                    <figure data-id="3">
-                        <img style="height: 17em;" src="imgs/single_demo11.svg"/>
-                    </figure>
-                    <div style="fragment">
-                        \[V_3 < V_3' < V_3''\]
-                    </div>
- 
-                    <p style="width: 30em;" class="fragment">Can sample from <strong>$\pi$</strong> to generate high weight paths.</p>
+                <section>
+                    <h1>Demonstration Informed Specification Search</h1>
+                    <img style="height: 23em;" src="imgs/diss_overview.svg"/>
                 </section>
 
-                <section class="fancyp" >
+               <section class="fancyp" >
                     <h1>Can be seen as walk through labeled example space</h1>
                     <img style="height: 9em; opacity: 0.2" src="imgs/single_demo11.svg"/>
                     <img class="fragment" style="height: 12em;" src="imgs/diss_1.svg"/>
@@ -1201,16 +1198,21 @@ Afolabi, et al. "People as sensors: Imputing maps from human actions." IROS `18.
 	       <section class="fancyp">
 		   <h1>Demonstration Informed Specification Search</h1>
 
-                    <img style="height: 10em;" src="imgs/diss_3.svg"/>
+                    <img style="height: 6em;" src="imgs/diss_3.svg"/>
 		   <ol>
 		       <li>Start with labeled examples (can be empty).</li>
 		       <li class="fragment">Find consistent concept from labeled examples.</li>
 		       <li class="fragment">Construct maximum entropy policy, $\pi_\varphi$, to match demonstrations
 			     </br> <span class="fragment">(or competence hyper-parameter).</span></li>
-		       <li class="fragment">Calculate gradient of surprisal, $\nabla \hat{l}$.</li>
-		       <li class="fragment">Sample where to deviate from demonstrations $\propto \nabla \hat{l}$.</li>
-		       <li class="fragment">Sample extension from $\pi_\varphi$ conditioned on moving in $\nabla \hat{l}$ direction.</li>
-		       <li class="fragment">A labeled path to examples and repeat .</li>
+		       <li class="fragment">Calculate gradient of surprisal, $\nabla \hat{h}$.</li>
+		       <li class="fragment">Sample pivot, $i$, $\propto \nabla \hat{h}$.</li>
+		       <li class="fragment">Sample path using $\pi_\varphi$ conditioned on
+                           <ul>
+                               <li>Pivoting at $i$.</li>
+                               <li>$\xi \in \varphi$ iff $\nabla_i \hat{h} < 0$.</li>
+                           </ul>
+                       </li>
+		       <li class="fragment">Add labeled path to examples and repeat.</li>
 		   </ol>
 	       </section>
 
@@ -1227,7 +1229,7 @@ Afolabi, et al. "People as sensors: Imputing maps from human actions." IROS `18.
                 </section>
 
                 <section>
-                    <h1>Start by assuming demonstration is positive</h1>
+                    <h1>Start with no labeled examples</h1>
 
                    <img src="imgs/example_domain_6_2.svg"/>
                 </section>
@@ -1245,25 +1247,51 @@ Afolabi, et al. "People as sensors: Imputing maps from human actions." IROS `18.
                 </section>
 
                 <section>
-                    <h1>Deviate at surprising action</h1>
+                    <h1>Calculate gradient using $p=0.8$</h1>
 
-                   <img src="imgs/example_domain_6_5.svg"/>
+                   <img src="imgs/example_domain_6_3_2.svg"/>
                 </section>
+                 <section>
+                    <h1>Pivoting at 9 most likely, but... $\xi \in \varphi$ iff $\nabla_i \hat{h} < 0$</h1>
+
+                   <img src="imgs/example_domain_6_3_3.svg"/>
+                </section>
+                 <section>
+                    <h1>Can pivot at 3</h1>
+
+                   <img src="imgs/example_domain_6_3_4.svg"/>
+                </section>
+
                 <section>
                     <h1>Add to negative example set to adjust V</h1>
 
                    <img src="imgs/example_domain_6_6.svg"/>
                 </section>
-                <section>
-                    <h1>don't recharge while wet</h1>
+                 <section>
+                    <h1>Synthesize minimal DFA</h1>
+
+                   <img src="imgs/example_domain_6_6_2.svg"/>
+                </section>
+                 <section>
+                    <h1>Calculate gradient using $p=0.8$</h1>
+                   <img src="imgs/example_domain_6_6_3.svg"/>
+                </section>
+                 <section>
+                    <h1>Pivoting at 9 most likely, and can sample $\xi \in \varphi$ iff $\nabla_i \hat{h} < 0$</h1>
+
+                   <img src="imgs/example_domain_6_6_4.svg"/>
+                </section>
+
+                 <section>
+                    <h1>Don't recharge while wet</h1>
 
                    <img src="imgs/example_domain_6_7.svg"/>
                 </section>
 
                 <section>
-                    <h1>More detailed experiment on the way</h1>
+                    <h1>Don't recharge while wet</h1>
 
-                   <img src="imgs/example_domain_6_7.svg"/>
+                   <img src="imgs/example_domain_6_7_2.svg"/>
                 </section>
 
 
