@@ -1072,12 +1072,13 @@ Afolabi, et al. "People as sensors: Imputing maps from human actions." IROS `18.
 		    <p>Want to find specification that makes the demonstrations unsurprising.</p>
 		    <div class="fragment">
 			    \[
-			    \min_\varphi \bigg \{ -\sum_{i=1}^n \ln \Pr(\text{demo}_i~|~\varphi, \text{dynamics})\bigg \}
+				h(\varphi) \triangleq  -\sum_{i=1}^n \ln \Pr(\text{demo}_i~|~\varphi, \text{dynamics})
 			    \]	
 		    </div>
+
 		    <div class="fragment">
 			    \[
-				l(\varphi) \triangleq  -\sum_{i=1}^n \ln \Pr(\text{demo}_i~|~\varphi, \text{dynamics})
+			    \varphi \sim \text{arg} \min_{\psi\in \Phi} \big \{h(\psi) \big \}
 			    \]	
 		    </div>
         
