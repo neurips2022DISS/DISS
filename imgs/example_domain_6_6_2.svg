@@ -1009,9 +1009,9 @@
      inkscape:pageopacity="0"
      inkscape:pagecheckerboard="1"
      showgrid="false"
-     inkscape:zoom="4"
-     inkscape:cx="1535"
-     inkscape:cy="754"
+     inkscape:zoom="1"
+     inkscape:cx="1267.5"
+     inkscape:cy="727"
      inkscape:window-width="3440"
      inkscape:window-height="1390"
      inkscape:window-x="0"
@@ -1180,15 +1180,6 @@
        x="1031.7817"
        y="537.29047"
        id="rect2421-0-3-4-9-6" />
-    <rect
-       transform="matrix(-0.00776784,0.99996983,0.99997425,0.00717687,0,0)"
-       style="fill:#afafff;stroke:#000000;stroke-width:0.665223"
-       class="water"
-       height="0.61066025cm"
-       width="0.58697325cm"
-       x="982.10651"
-       y="1511.3165"
-       id="rect2421-0-3-4-9-6-0" />
     <rect
        transform="matrix(-0.00776784,0.99996983,0.99997425,0.00717687,0,0)"
        style="opacity:0.3;fill:#afafff;stroke:#000000;stroke-width:4.36545"
