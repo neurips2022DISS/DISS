@@ -76,28 +76,26 @@ def test_gridworld_smoke():
 
     def partial_dfa(inputs):
         def transition(s, c):
-            if s == 'dead' or c == 'red':
-                return 'dead'
-            elif s == 'wet' and c == 'yellow':
-                return 'dead'
-            elif s == 'wet' and c == 'green':
-                return 'dry'
-            elif s == 'dry' and c == 'yellow':
-                return 'recharge'
-            elif c == 'blue':
-                return 'wet'
+            if c == 'red':
+                return s | 0b01
+            elif c == 'yellow':
+                return s | 0b10
             return s
-           
+
         return dfa.DFA(
-            start='dry',
+            start=0b00,
             inputs=inputs,
-            label=lambda s: s == 'recharge',
+            label=lambda s: s == 0b10,
             transition=transition
         )
 
     def trace(path):
         return tuple(x for x in map(gw.sensor, path) if x != 'white')
 
+    def subset_check_wrapper(dfa_candidate):
+        partial = partial_dfa(dfa_candidate.inputs)
+        ce = find_subset_counterexample(dfa_candidate, partial)
+        return ce is None
 
     def to_concept(data):
         data = LabeledExamples(
@@ -107,8 +105,8 @@ def test_gridworld_smoke():
         data @= base_examples
 
         # CEGIS for subset.
-        for i in range(15):
-            mydfa = find_dfa(data.positive, data.negative) 
+        for i in range(20):
+            mydfa = find_dfa(data.positive, data.negative, minimum_ns_edges=True) 
             partial = partial_dfa(mydfa.inputs)
             ce = find_subset_counterexample(mydfa, partial)
             if ce is None:
@@ -120,10 +118,8 @@ def test_gridworld_smoke():
                 prefix = ce[:k]
                 if not lbl:
                     data @= LabeledExamples(negative=[prefix])
-                else:
-                    data @= LabeledExamples(positive=[prefix])
-        
-        return DFAConcept.from_examples(data, gw.sensor) 
+
+        return DFAConcept.from_examples(data, gw.sensor, subset_check_wrapper) 
 
     dfa_search = search(demos, to_concept, sampler_factory)
 
