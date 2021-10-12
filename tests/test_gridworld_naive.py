@@ -106,7 +106,7 @@ def test_gridworld_smoke():
 
         # CEGIS for subset.
         for i in range(20):
-            mydfa = find_dfa(data.positive, data.negative, minimum_ns_edges=True) 
+            mydfa = find_dfa(data.positive, data.negative, order_by_stutter=True) 
             partial = partial_dfa(mydfa.inputs)
             ce = find_subset_counterexample(mydfa, partial)
             if ce is None:
