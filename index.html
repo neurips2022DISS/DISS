@@ -1166,8 +1166,8 @@ Afolabi, et al. "People as sensors: Imputing maps from human actions." IROS `18.
                     </figure>
                     <ol>
                         <li class="fragment">$|\nabla \widehat{h}|$ determines weight of evidence.</li>
-                        <li class="fragment">Old label given by $\nabla_i \widehat{h} < 0$.</li>
-                        <li class="fragment">New label given by $\nabla_i \widehat{h} > 0$.</li>
+                        <li class="fragment">Old label given by $\nabla_i \widehat{h} > 0$.</li>
+                        <li class="fragment">New label given by $\nabla_i \widehat{h} < 0$.</li>
                     </ol>
  
                </section>
@@ -1209,7 +1209,7 @@ Afolabi, et al. "People as sensors: Imputing maps from human actions." IROS `18.
 		       <li class="fragment">Sample path using $\pi_\varphi$ conditioned on
                            <ul>
                                <li>Pivoting at $i$.</li>
-                               <li>$\xi \in \varphi$ iff $\nabla_i \hat{h} < 0$.</li>
+                               <li>$\xi \in \varphi$ iff $\nabla_i \hat{h} > 0$.</li>
                            </ul>
                        </li>
 		       <li class="fragment">Add labeled path to examples and repeat.</li>
