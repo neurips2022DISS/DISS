@@ -94,13 +94,13 @@ def test_productmc():
 
     sampler = sampler_factory(demos)
 
-    data1, prob = sampler(top)
-    assert 0 <= prob <= 1
+    data1, metadata = sampler(top)
+    assert 0 <= metadata["sample_prob"] <= 1
     assert data1.positive == set()
     assert len(data1.negative) == 1
 
-    data2, prob = sampler(bot)
-    assert 0 <= prob <= 1
+    data2, metadata = sampler(bot)
+    assert 0 <= metadata["sample_prob"] <= 1
     assert data2.negative == set()
     assert len(data2.positive) == 1
 
@@ -117,14 +117,14 @@ def test_productmc():
         return DFAConcept.from_examples(data, sensor)
  
     dfa_search = search(demos, to_concept, sampler_factory)
-    data1, concept1 = next(dfa_search)
+    data1, concept1, metadata = next(dfa_search)
     assert_consistent(data1, concept1)
 
-    data2, concept2 = next(dfa_search)
+    data2, concept2, metadata = next(dfa_search)
     assert_consistent(data2, concept2)
 
-    data3, concept3 = next(dfa_search)
+    data3, concept3, metadata = next(dfa_search)
     assert_consistent(data3, concept3)
 
-    data4, concept4 = next(dfa_search)
+    data4, concept4, metadata = next(dfa_search)
     assert_consistent(data4, concept4)

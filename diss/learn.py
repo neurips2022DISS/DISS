@@ -142,10 +142,11 @@ class GradientGuidedSampler:
         tree = PrefixTree.from_demos(demos)
         return GradientGuidedSampler(tree, to_chain)
 
-    def __call__(self, concept: Concept) -> tuple[LabeledExamples, float]:
+    def __call__(self, concept: Concept) -> tuple[LabeledExamples, Any]:
         tree = self.tree
         chain = self.to_chain(concept, tree)
         grad = surprisal_grad(chain, tree)
+        surprisal_val = surprisal(chain, tree)
 
         while any(grad) > 0:
             weights = [abs(x) for x in grad]
@@ -167,7 +168,7 @@ class GradientGuidedSampler:
             else:
                 examples = LabeledExamples(negative=[path])  # type: ignore
             sample_prob *= weights[node] / sum(weights)
-            return examples, sample_prob 
+            return examples, {"sample_prob": sample_prob, "surprisal": surprisal_val}
         raise RuntimeError("Gradient can't be use to guide search?!")
 
 
@@ -185,13 +186,15 @@ def search(
 
     examples = LabeledExamples()
     example_path = []
+    metadata = None
     while True:
         try:
             concept = to_concept(examples)
-            yield examples, concept
-            examples @= example_sampler(concept)[0]
-            example_path.append(examples)
+            yield examples, concept, metadata
+            example_mat, metadata = example_sampler(concept)
+            examples @= example_mat
+            example_path.append((examples, metadata))
 
         except ConceptIdException:
-            examples = example_path.pop()  # Roll back!
-            yield examples, None
+            examples, metadata = example_path.pop()  # Roll back!
+            yield examples, None, metadata
