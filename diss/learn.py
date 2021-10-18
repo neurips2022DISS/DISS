@@ -186,15 +186,15 @@ def search(
 
     examples = LabeledExamples()
     example_path = []
-    metadata = None
     while True:
         try:
             concept = to_concept(examples)
+            new_examples, metadata = example_sampler(concept)
             yield examples, concept, metadata
-            example_mat, metadata = example_sampler(concept)
-            examples @= example_mat
-            example_path.append((examples, metadata))
+            examples @= new_examples
+            example_path.append((examples, concept, metadata))
 
         except ConceptIdException:
-            examples, metadata = example_path.pop()  # Roll back!
-            yield examples, None, metadata
+            if example_path:
+                examples, concept, metadata = example_path.pop()  # Roll back!
+                yield examples, concept, metadata
