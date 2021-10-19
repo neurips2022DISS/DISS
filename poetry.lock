@@ -157,7 +157,7 @@ draw = ["pydot (>=1.4,<2.0)"]
 
 [[package]]
 name = "dfa-identify"
-version = "3.1.3"
+version = "3.2.0"
 description = "Python library for identifying (learning) DFAs (automata) from labeled examples."
 category = "dev"
 optional = false
@@ -1266,8 +1266,8 @@ dfa = [
     {file = "dfa-2.3.1.tar.gz", hash = "sha256:fc6bd6f7a7d904874f77ea5c99609dad12ecaefc89baf006a50b152339115905"},
 ]
 dfa-identify = [
-    {file = "dfa_identify-3.1.3-py3-none-any.whl", hash = "sha256:58a68e92a0c0eca872335048a3f95486872345fc275dc47ae957ce406c55fc1c"},
-    {file = "dfa_identify-3.1.3.tar.gz", hash = "sha256:13ed158dd06fba67fd491e56e5c48bfab3aa4dd48a67a7671da04dcb6c99d851"},
+    {file = "dfa_identify-3.2.0-py3-none-any.whl", hash = "sha256:3421fe8ba7782f2f59d32c841de4914cdec3e8aa5fef16a5b6f5beb47045c7f9"},
+    {file = "dfa_identify-3.2.0.tar.gz", hash = "sha256:d40ec879a732ceee6b9b8127e0a0ce0fd4e89a393f23545d9fedd1663e4b372a"},
 ]
 entrypoints = [
     {file = "entrypoints-0.3-py2.py3-none-any.whl", hash = "sha256:589f874b313739ad35be6e0cd7efde2a4e9b6fea91edcc34e58ecbb8dbe56d19"},
