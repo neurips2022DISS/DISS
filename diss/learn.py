@@ -190,9 +190,9 @@ def search(
         try:
             concept = to_concept(examples)
             new_examples, metadata = example_sampler(concept)
+            example_path.append((examples, concept, metadata))
             yield examples, concept, metadata
             examples @= new_examples
-            example_path.append((examples, concept, metadata))
 
         except ConceptIdException:
             if example_path:

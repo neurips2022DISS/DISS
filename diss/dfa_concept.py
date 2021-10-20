@@ -53,10 +53,17 @@ class DFAConcept:
         return f'{start}\n{pformat(graph)}'
 
     @staticmethod
-    def from_examples(data: LabeledExamples, sensor: Sensor, filter_pred=None) -> DFAConcept:
-        # Convert to correct alphabet.
+    def from_examples(
+            data: LabeledExamples, 
+            sensor: Sensor, 
+            filter_pred: Callable[[DFA], bool] = None,
+            alphabet: frozenset = None) -> DFAConcept:
+        langs = find_dfas(
+            data.positive, data.negative, 
+            alphabet=alphabet,
+            order_by_stutter=True
+        )  # type: ignore
 
-        langs = find_dfas(data.positive, data.negative, order_by_stutter=True)  # type: ignore
         if filter_pred is not None:
             langs = filter(filter_pred, langs)
         langs = fn.take(ENUM_MAX, langs)
