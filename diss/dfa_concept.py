@@ -57,7 +57,8 @@ class DFAConcept:
             data: LabeledExamples, 
             sensor: Sensor, 
             filter_pred: Callable[[DFA], bool] = None,
-            alphabet: frozenset = None) -> DFAConcept:
+            alphabet: frozenset = None,
+            find_dfas=find_dfas) -> DFAConcept:
         langs = find_dfas(
             data.positive, data.negative, 
             alphabet=alphabet,

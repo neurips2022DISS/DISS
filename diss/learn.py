@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import random
+from pprint import pformat
 from typing import Any, Callable, Iterable, Optional, Protocol, Sequence
 
 import attr
@@ -36,7 +37,7 @@ class LabeledExamples:
 
     def __repr__(self) -> str:
         pos, neg = set(self.positive), set(self.negative)
-        return f'+: {pos}\n--------------\n-: {neg}'
+        return f'+: {pformat(pos)}\n--------------\n-: {pformat(neg)}'
 
     def __matmul__(self, other: LabeledExamples) -> LabeledExamples:
         return LabeledExamples(
@@ -136,11 +137,12 @@ def surprisal(chain: MarkovChain, tree: PrefixTree) -> float:
 class GradientGuidedSampler:
     tree: PrefixTree
     to_chain: MarkovChainFact
+    beta: float = 1.0
 
     @staticmethod
-    def from_demos(demos: Demos, to_chain: MarkovChainFact) -> GradientGuidedSampler:
+    def from_demos(demos: Demos, to_chain: MarkovChainFact, beta: float=1.0) -> GradientGuidedSampler:
         tree = PrefixTree.from_demos(demos)
-        return GradientGuidedSampler(tree, to_chain)
+        return GradientGuidedSampler(tree, to_chain, beta)
 
     def __call__(self, concept: Concept) -> tuple[LabeledExamples, Any]:
         tree = self.tree
@@ -148,6 +150,8 @@ class GradientGuidedSampler:
         grad = surprisal_grad(chain, tree)
         surprisal_val = surprisal(chain, tree)
 
+        examples = LabeledExamples()
+        N = np.random.geometric(self.beta)
         while any(grad) > 0:
             weights = [abs(x) for x in grad]
             node = random.choices(range(len(grad)), weights)[0]  # Sample node.
@@ -162,13 +166,16 @@ class GradientGuidedSampler:
             path, sample_prob = sample  
             path = tuple(path) # Make immutable before sending out example.
 
-            examples: LabeledExamples
             if win:
-                examples = LabeledExamples(positive=[path])  # type: ignore
+                examples @= LabeledExamples(positive=[path])  # type: ignore
             else:
-                examples = LabeledExamples(negative=[path])  # type: ignore
+                examples @= LabeledExamples(negative=[path])  # type: ignore
             sample_prob *= weights[node] / sum(weights)
-            return examples, {"sample_prob": sample_prob, "surprisal": surprisal_val}
+
+            if N <= 1:
+                return examples, {"sample_prob": sample_prob, "surprisal": surprisal_val}
+            else:
+                N -= 1
         raise RuntimeError("Gradient can't be use to guide search?!")
 
 
