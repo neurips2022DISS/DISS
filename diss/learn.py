@@ -57,6 +57,8 @@ class Concept(Protocol):
 
     def __contains__(self, path: Path) -> bool: ...
 
+    def seperate(self, other: Concept) -> Path: ...
+
 
 ###############################################################################
 #                              Guided Search 
@@ -64,10 +66,8 @@ class Concept(Protocol):
 
 Identify = Callable[[LabeledExamples], Concept]
 MarkovChainFact = Callable[[Concept, PrefixTree], MarkovChain]
-ExampleSamplerFact = Callable[
-    [Demos],  # Concept, PrefixTree, max_len
-    Callable[[Concept], tuple[LabeledExamples, float]]
-]
+ExampleSampler = Callable[[Concept], tuple[LabeledExamples, dict[str, Any]]]
+ExampleSamplerFact = Callable[[Demos], ExampleSampler]
 
 
 def surprisal_grad(chain: MarkovChain, tree: PrefixTree) -> list[float]:
@@ -205,3 +205,109 @@ def search(
             if example_path:
                 examples, concept, metadata = example_path.pop()  # Roll back!
                 yield examples, concept, metadata
+
+
+PathsOfInterest = set[Any]
+AnnealerState = tuple[LabeledExamples, Concept | None, float]
+
+
+def reset(
+        temp: float,
+        poi: set[Any],
+        concept2energy: dict[Concept, float],
+) -> tuple[PathsOfInterest, AnnealerState]:
+    poi = set(poi)  # Decouple from input POI.
+
+    # 1. Sort concepts by increasing energy and create energy vector.
+    sorted_concepts = sorted(list(concept2energy), key=concept2energy.get)
+    energies = np.array([concept2energy[c] for c in sorted_concepts])
+
+    # 2. Turn energy vector into annealed probability mass function.
+    pmf = np.exp(-energies / temp)
+    pmf /= sum(pmf)  # Normalize.
+
+    # 3. Compute distiguishing strings for top 80%.
+    cmf = np.cumsum(pmf)  # Cummalitive mass function.
+    for count, (prob, concept) in enumerate(zip(cmf, sorted_concepts)):
+        if prob > 0.8:
+            break
+    to_distiguish = combinations(sorted_concepts[:count], 2)
+    poi |= {c1.seperate(c2) for c1, c2 in to_distinguish}
+
+    # 4. Compute current support's belief on unlabeled strings of interest.
+    weighted_words = {}
+    for word in poi:
+        votes = np.array([word in c for c in sorted_concepts])
+        weighted_words[word] = pmf @ votes
+
+    # 5. Set examples based on marginalizing over current concept class.
+    positive, negative = set(), set()
+    for x, weight in weighted_words.items():
+        confidence = 2*(weight - 0.5 if weight > 0.5 else 0.5 - weight)
+        if np.random.rand() > confidence:
+            continue
+        elif weight < 0.5:
+            negative.add(x)
+        elif weight > 0.5:
+            positive.add(x)
+    examples = LabeledExamples(positive, negative)  
+    return (examples, None, float('inf'))
+
+
+def diss_annealer(
+    to_concept: Identify,
+    example_sampler: ExampleSampler,
+) -> Iterable[tuple[LabeledExamples, Concept | None]]:
+    state = new_data = None
+    while True:
+        temp, state = yield state, new_data
+
+        # Sample from proposal distribution.
+        try:
+            examples, _, energy = state
+            concept = to_concept(examples)
+            new_data, metadata = example_sampler(concept)
+            new_energy = metadata['surprisal'] + concept.size
+        except ConceptIdException:
+            yield state, LabeledExamples()  # Reject.
+            continue
+
+        # Accept/Reject proposal based on energy delta.
+        dE = new_energy - energy
+        accept = (dE <= 0) or (np.exp(-dE / temp) >= np.random.rand())
+        if accept: 
+            state = (examples @ new_data, concept, new_energy) 
+
+        yield state, new_data
+
+
+def diss(
+    demos: Demos, 
+    to_concept: Identify,
+    sampler_fact: ExampleSamplerFact,
+    n_iters: int = 5,
+    n_sggs_trials: int = 5,
+    cooling_schedule: Callable[[int], float] | None = None,
+) -> Iterable[tuple[LabeledExamples, Optional[Concept]]]:
+    """Perform demonstration informed gradiented guided search."""
+    if cooling_schedule is None:
+        def cooling_schedule(t: int) -> float:
+            return 10*(1 - t / (n_iters*n_sggs_trials)) + 1
+
+    annealer = diss_annealer(to_concept, sampler_fact(demos))
+    next(annealer)  # Initialize annealer.
+
+    poi = set()            # Paths of interest.
+    concept2energy = {}    # Concepts seen so far + associated energies.
+    for i in range(n_iters):
+        poi, state = reset(temp, poi, concept2energy)
+        for j in range(n_sggs_trials):
+            temp = cooling_schedule(i * n_sggs_trials + j)
+            state, new_data = annealer.send(temp, state)
+            yield state
+ 
+            # DISS Bookkeeping for resets.
+            poi |= new_data.positive | new_data.negative
+            _, concept, energy = state 
+            concept2energy[concept] = energy
+ 
