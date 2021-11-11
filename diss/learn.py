@@ -50,6 +50,12 @@ class LabeledExamples:
         neg_delta = self.negative ^ other.negative
         return len(pos_delta) + len(neg_delta) - len(pos_delta & neg_delta)
 
+    def map(self, func: Callable[[Any], Any]) -> LabeledExamples:
+        return LabeledExamples(
+            positive=map(func, self.positive), 
+            negative=map(func, self.negative),
+        )
+
 
 class Concept(Protocol):
     @property
@@ -216,6 +222,7 @@ def reset(
         temp: float,
         poi: set[Any],
         concept2energy: dict[Concept, float],
+        sensor: Callable[[Any], Any],
 ) -> tuple[PathsOfInterest, AnnealerState]:
     poi = set(poi)  # Decouple from input POI.
 

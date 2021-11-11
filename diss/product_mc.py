@@ -59,7 +59,6 @@ def product_dag(
     lose, win = map(str, (uuid1(), uuid1()))  # Unique names for win/lose.
 
     dag = nx.DiGraph()
-
     stack = [(dyn.start, concept.monitor, 0)]
     while stack:
         state = stack.pop()

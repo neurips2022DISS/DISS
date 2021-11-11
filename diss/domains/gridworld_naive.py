@@ -6,7 +6,7 @@ from typing import Any, Literal, Optional, Union
 import attr
 
 from diss import State, Player
-from diss.product_mc import ProductMC, Moves
+from diss.product_mc import Moves
 
 
 Action = Literal['↑', '↓', '←', '→']

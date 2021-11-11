@@ -57,7 +57,7 @@ def test_gridworld_smoke():
             demos=demos,
             competency=lambda c, t: 0.8,
             to_chain=lambda c, t, psat: ProductMC.construct(
-                concept=c, tree=t, dyn=gw, max_depth=9, psat=psat
+                concept=c, tree=t, dyn=gw, max_depth=9, psat=psat, sensor=gw.sensor
             ),
         )
 
@@ -99,10 +99,7 @@ def test_gridworld_smoke():
         return ce is None
 
     def to_concept(data):
-        data = LabeledExamples(
-            positive = [trace(x) for x in data.positive],
-            negative = [trace(x) for x in data.negative],
-        )
+        data = data.map(trace)
         data @= base_examples
 
         # CEGIS for subset.
