@@ -65,7 +65,9 @@ class Concept(Protocol):
 ###############################################################################
 
 Identify = Callable[[LabeledExamples], Concept]
-MarkovChainFact = Callable[[Concept, PrefixTree], MarkovChain]
+Competency = float
+CompetencyEstimator = Callable[[Concept, PrefixTree], Competency]
+MarkovChainFact = Callable[[Concept, PrefixTree, Competency], MarkovChain]
 ExampleSampler = Callable[[Concept], tuple[LabeledExamples, dict[str, Any]]]
 ExampleSamplerFact = Callable[[Demos], ExampleSampler]
 
@@ -137,21 +139,24 @@ def surprisal(chain: MarkovChain, tree: PrefixTree) -> float:
 class GradientGuidedSampler:
     tree: PrefixTree
     to_chain: MarkovChainFact
-    beta: float = 1.0
+    competency: CompetencyEstimator
 
     @staticmethod
-    def from_demos(demos: Demos, to_chain: MarkovChainFact, beta: float=1.0) -> GradientGuidedSampler:
+    def from_demos(
+            demos: Demos, 
+            to_chain: MarkovChainFact, 
+            competency: CompetencyEstimator,
+    ) -> GradientGuidedSampler:
         tree = PrefixTree.from_demos(demos)
-        return GradientGuidedSampler(tree, to_chain, beta)
+        return GradientGuidedSampler(tree, to_chain, competency)
 
     def __call__(self, concept: Concept) -> tuple[LabeledExamples, Any]:
         tree = self.tree
-        chain = self.to_chain(concept, tree)
+        chain = self.to_chain(concept, tree, self.competency(concept, tree))
         grad = surprisal_grad(chain, tree)
         surprisal_val = surprisal(chain, tree)
 
         examples = LabeledExamples()
-        N = np.random.geometric(self.beta)
         while any(grad) > 0:
             weights = [abs(x) for x in grad]
             node = random.choices(range(len(grad)), weights)[0]  # Sample node.
@@ -164,18 +169,14 @@ class GradientGuidedSampler:
                 continue
 
             path, sample_prob = sample  
-            path = tuple(path) # Make immutable before sending out example.
+            # Make immutable before sending out example.
+            path = tuple(path)
 
             if win:
                 examples @= LabeledExamples(positive=[path])  # type: ignore
             else:
                 examples @= LabeledExamples(negative=[path])  # type: ignore
-            sample_prob *= weights[node] / sum(weights)
-
-            if N <= 1:
-                return examples, {"sample_prob": sample_prob, "surprisal": surprisal_val}
-            else:
-                N -= 1
+            return examples, {"surprisal": surprisal_val}
         raise RuntimeError("Gradient can't be use to guide search?!")
 
 
@@ -284,7 +285,9 @@ def diss_annealer(
 def diss(
     demos: Demos, 
     to_concept: Identify,
-    sampler_fact: ExampleSamplerFact,
+    to_chain: MarkovChainFact,
+    competency: CompetencyEstimator,
+    sensor: Callable[[Any], Any] = lambda x: x,
     n_iters: int = 5,
     n_sggs_trials: int = 5,
     cooling_schedule: Callable[[int], float] | None = None,
@@ -294,7 +297,12 @@ def diss(
         def cooling_schedule(t: int) -> float:
             return 10*(1 - t / (n_iters*n_sggs_trials)) + 1
 
-    annealer = diss_annealer(to_concept, sampler_fact(demos))
+    sggs = GradientGuidedSampler.from_demos(
+        demos=demos,
+        to_chain=to_chain,
+        competency=competency,
+    )
+    annealer = diss_annealer(to_concept, sggs)
     next(annealer)  # Initialize annealer.
 
     poi = set()            # Paths of interest.

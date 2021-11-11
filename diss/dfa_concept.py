@@ -8,6 +8,7 @@ import attr
 import dfa
 import funcy as fn
 import numpy as np
+from dfa.utils import find_equiv_counterexample
 from pysat.solvers import Minicard
 from dfa_identify import find_dfas
 from scipy.special import softmax
@@ -43,7 +44,6 @@ def count_edges(graph: dfa.DFADict) -> int:
 @attr.frozen
 class DFAConcept:
     dfa: dfa.DFA
-    sensor: Sensor
     size: float
     monitor: MonitorState
 
@@ -52,10 +52,14 @@ class DFAConcept:
         remove_stutter(graph)
         return f'{start}\n{pformat(graph)}'
 
+    def seperate(self, concept: Concept) -> Path | None:
+        if not isinstance(concept, DFAConcept):
+            raise NotImplementedError
+        return find_equiv_counterexample(self.dfa, other.dfa)
+
     @staticmethod
     def from_examples(
             data: LabeledExamples, 
-            sensor: Sensor, 
             filter_pred: Callable[[DFA], bool] = None,
             alphabet: frozenset = None,
             find_dfas=find_dfas) -> DFAConcept:
@@ -71,12 +75,12 @@ class DFAConcept:
         if not langs:
             raise ConceptIdException
 
-        concepts = [DFAConcept.from_dfa(lang, sensor) for lang in langs]
+        concepts = [DFAConcept.from_dfa(lang) for lang in langs]
         weights = [np.exp(-c.size / TEMP) for c in concepts]
         return random.choices(concepts, weights)[0]  # type: ignore
-  
+
     @staticmethod
-    def from_dfa(lang: DFA, sensor: Sensor) -> DFAConcept:
+    def from_dfa(lang: DFA) -> DFAConcept:
         # TODO: Support from graph.
         assert lang.inputs is not None
         assert lang.outputs <= {True, False}
@@ -89,22 +93,22 @@ class DFAConcept:
         n_edges = count_edges(graph)
         size = state_bits * (1 + 2 * n_edges * np.log2(len(lang.inputs))) + 1
 
-        # Wrap graph dfa to conform to DFA Monitor API.
+        # Wrap dfa to conform to DFA Monitor API.
         @attr.frozen
         class DFAMonitor:
             state: dfa.State = start
 
             @property
             def accepts(self) -> bool:
-                return graph[self.state][0]
+                return lang._label(self.state)
 
-            def update(self, state: State) -> DFAMonitor:
-                """Assumes stuttering semantics for unknown transitions."""
-                symbol = sensor(state)
-                transitions = graph[self.state][1]
-                return DFAMonitor(transitions.get(symbol, self.state))
+            def update(self, sym: Any) -> DFAMonitor:
+                """Assumes stuttering semantics for unknown symbols."""
+                if sym not in lang.inputs:
+                    return self
+                return DFAMonitor(lang._transition(self.state, sym))
 
-        return DFAConcept(lang, sensor, size, DFAMonitor())
+        return DFAConcept(lang, size, DFAMonitor())
 
     def __contains__(self, path: Path) -> bool:
         monitor = self.monitor

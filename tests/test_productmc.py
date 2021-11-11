@@ -66,14 +66,15 @@ def test_productmc():
     def sensor(s):
         return s == 1
 
-    bot = DFAConcept.from_dfa(lang=empty_lang, sensor=sensor)
-    top = DFAConcept.from_dfa(lang=~empty_lang, sensor=sensor)
+    bot = DFAConcept.from_dfa(lang=empty_lang)
+    top = DFAConcept.from_dfa(lang=~empty_lang)
 
     chain = ProductMC.construct(
         concept=top, 
         tree=tree,
         dyn=dyn,
         max_depth=None,
+        sensor=sensor,
     )
 
     assert Counter(round(x, 1) for x in chain.edge_probs.values()) == {
@@ -87,7 +88,8 @@ def test_productmc():
     def sampler_factory(demos):
         return GradientGuidedSampler.from_demos(
             demos=demos,
-            to_chain=lambda c, t: ProductMC.construct(
+            competency=lambda *_: 0.8,
+            to_chain=lambda c, t, _: ProductMC.construct(
                 concept=c, tree=t, dyn=dyn, max_depth=None
             ),
         )
@@ -95,12 +97,10 @@ def test_productmc():
     sampler = sampler_factory(demos)
 
     data1, metadata = sampler(top)
-    assert 0 <= metadata["sample_prob"] <= 1
     assert data1.positive == set()
     assert len(data1.negative) == 1
 
     data2, metadata = sampler(bot)
-    assert 0 <= metadata["sample_prob"] <= 1
     assert data2.negative == set()
     assert len(data2.positive) == 1
 

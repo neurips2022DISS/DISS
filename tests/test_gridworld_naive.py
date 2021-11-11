@@ -55,8 +55,9 @@ def test_gridworld_smoke():
     def sampler_factory(demos):
         return GradientGuidedSampler.from_demos(
             demos=demos,
-            to_chain=lambda c, t: ProductMC.construct(
-                concept=c, tree=t, dyn=gw, max_depth=9, psat=0.8
+            competency=lambda c, t: 0.8,
+            to_chain=lambda c, t, psat: ProductMC.construct(
+                concept=c, tree=t, dyn=gw, max_depth=9, psat=psat
             ),
         )
 
@@ -119,13 +120,16 @@ def test_gridworld_smoke():
                 if not lbl:
                     data @= LabeledExamples(negative=[prefix])
 
-        return DFAConcept.from_examples(data, gw.sensor, subset_check_wrapper) 
+        return DFAConcept.from_examples(data, filter_pred=subset_check_wrapper) 
 
     dfa_search = search(demos, to_concept, sampler_factory)
 
     data1, concept1, metadata = next(dfa_search)
     path1 = [x for x, _ in demos[0]]
-    assert path1 in concept1
+    assert trace(path1) in concept1
 
     data2, concept2, metadata = next(dfa_search)
     data3, concept3, metadata = next(dfa_search)
+
+    # TODO: Try DISS
+    # TODO: Remove sensor from to_concept.

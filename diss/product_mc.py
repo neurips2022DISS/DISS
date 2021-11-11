@@ -53,6 +53,7 @@ def product_dag(
         tree: PrefixTree,
         dyn: Dynamics,
         max_depth: Optional[int],
+        sensor: Callable[[State], Any],
     ) -> nx.DiGraph:
     depth_budget: float = oo if max_depth is None else max_depth
     lose, win = map(str, (uuid1(), uuid1()))  # Unique names for win/lose.
@@ -74,7 +75,7 @@ def product_dag(
 
         is_env = dyn.player(dstate) == 'env'
         for dstate2 in moves:
-            mstate2 = mstate.update(dstate2)
+            mstate2 = mstate.update(sensor(dstate2))
             state2 = (dstate2, mstate2, depth + 1)
             if state2 not in dag.nodes:
                 stack.append((dstate2, mstate2, depth + 1))
@@ -161,9 +162,10 @@ class ProductMC:
             max_depth: Optional[int],
             rationality: Optional[float] = None,
             psat: Optional[float] = None,
+            sensor: Callable[[State], Any] = lambda x: x,
         ) -> ProductMC:
         """Constructs a tabular policy by unrolling of dynamics/concept."""
-        dag = product_dag(concept, tree, dyn, max_depth)
+        dag = product_dag(concept, tree, dyn, max_depth, sensor)
 
         if rationality is None:
             if psat is None:
