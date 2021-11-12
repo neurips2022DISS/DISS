@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import random
+from itertools import combinations
 from pprint import pformat
 from typing import Any, Callable, Iterable, Optional, Protocol, Sequence
 
@@ -19,6 +20,7 @@ __all__ = [
     'LabeledExamples', 
     'Identify', 
     'GradientGuidedSampler',
+    'diss',
     'search',
 ]
 
@@ -164,7 +166,7 @@ class GradientGuidedSampler:
 
         examples = LabeledExamples()
         while any(grad) > 0:
-            weights = [abs(x) for x in grad]
+            weights = [abs(x)**2 for x in grad]
             node = random.choices(range(len(grad)), weights)[0]  # Sample node.
 
             win = grad[node] < 0  # Target label.
@@ -194,6 +196,7 @@ def search(
     demos: Demos, 
     to_concept: Identify,
     sampler_fact: ExampleSamplerFact,
+    sensor: Callable[[Any], Any] = lambda x: x,
 ) -> Iterable[tuple[LabeledExamples, Optional[Concept]]]:
     """Perform demonstration informed gradiented guided search."""
     example_sampler = sampler_fact(demos)
@@ -206,7 +209,7 @@ def search(
             new_examples, metadata = example_sampler(concept)
             example_path.append((examples, concept, metadata))
             yield examples, concept, metadata
-            examples @= new_examples
+            examples @= new_examples.map(lambda x: tuple(map(sensor, x)))
 
         except ConceptIdException:
             if example_path:
@@ -215,15 +218,13 @@ def search(
 
 
 PathsOfInterest = set[Any]
-AnnealerState = tuple[LabeledExamples, Concept | None, float]
 
 
 def reset(
         temp: float,
         poi: set[Any],
         concept2energy: dict[Concept, float],
-        sensor: Callable[[Any], Any],
-) -> tuple[PathsOfInterest, AnnealerState]:
+) -> tuple[PathsOfInterest, LabeledExamples, float]:
     poi = set(poi)  # Decouple from input POI.
 
     # 1. Sort concepts by increasing energy and create energy vector.
@@ -235,58 +236,29 @@ def reset(
     pmf /= sum(pmf)  # Normalize.
 
     # 3. Compute distiguishing strings for top 80%.
-    cmf = np.cumsum(pmf)  # Cummalitive mass function.
-    for count, (prob, concept) in enumerate(zip(cmf, sorted_concepts)):
-        if prob > 0.8:
-            break
-    to_distiguish = combinations(sorted_concepts[:count], 2)
+    cmf = np.cumsum(pmf)        # Cummalitive mass function.
+    idx = (cmf <= 0.8).sum()    # idx of cutoff.
+    to_distinguish = combinations(sorted_concepts[:idx], 2)
     poi |= {c1.seperate(c2) for c1, c2 in to_distinguish}
 
     # 4. Compute current support's belief on unlabeled strings of interest.
-    weighted_words = {}
+    p_accept = {}
     for word in poi:
-        votes = np.array([word in c for c in sorted_concepts])
-        weighted_words[word] = pmf @ votes
+        votes = np.array([(word in c) for c in sorted_concepts])
+        p_accept[word] = pmf @ votes
 
     # 5. Set examples based on marginalizing over current concept class.
     positive, negative = set(), set()
-    for x, weight in weighted_words.items():
-        confidence = 2*(weight - 0.5 if weight > 0.5 else 0.5 - weight)
+    for x, belief in p_accept.items():
+        confidence = 2*(belief - 0.5 if belief > 0.5 else 0.5 - belief)
         if np.random.rand() > confidence:
             continue
-        elif weight < 0.5:
+        elif belief < 0.5:
             negative.add(x)
-        elif weight > 0.5:
+        elif belief > 0.5:
             positive.add(x)
     examples = LabeledExamples(positive, negative)  
-    return (examples, None, float('inf'))
-
-
-def diss_annealer(
-    to_concept: Identify,
-    example_sampler: ExampleSampler,
-) -> Iterable[tuple[LabeledExamples, Concept | None]]:
-    state = new_data = None
-    while True:
-        temp, state = yield state, new_data
-
-        # Sample from proposal distribution.
-        try:
-            examples, _, energy = state
-            concept = to_concept(examples)
-            new_data, metadata = example_sampler(concept)
-            new_energy = metadata['surprisal'] + concept.size
-        except ConceptIdException:
-            yield state, LabeledExamples()  # Reject.
-            continue
-
-        # Accept/Reject proposal based on energy delta.
-        dE = new_energy - energy
-        accept = (dE <= 0) or (np.exp(-dE / temp) >= np.random.rand())
-        if accept: 
-            state = (examples @ new_data, concept, new_energy) 
-
-        yield state, new_data
+    return poi, examples, float('inf')
 
 
 def diss(
@@ -294,7 +266,7 @@ def diss(
     to_concept: Identify,
     to_chain: MarkovChainFact,
     competency: CompetencyEstimator,
-    sensor: Callable[[Any], Any] = lambda x: x,
+    lift_path: Callable[[Path], Path] = lambda x: x,
     n_iters: int = 5,
     n_sggs_trials: int = 5,
     cooling_schedule: Callable[[int], float] | None = None,
@@ -302,27 +274,45 @@ def diss(
     """Perform demonstration informed gradiented guided search."""
     if cooling_schedule is None:
         def cooling_schedule(t: int) -> float:
-            return 10*(1 - t / (n_iters*n_sggs_trials)) + 1
+            return 30*(1 - t / (n_iters*n_sggs_trials)) + 1
 
     sggs = GradientGuidedSampler.from_demos(
         demos=demos,
         to_chain=to_chain,
         competency=competency,
     )
-    annealer = diss_annealer(to_concept, sggs)
-    next(annealer)  # Initialize annealer.
 
     poi = set()            # Paths of interest.
     concept2energy = {}    # Concepts seen so far + associated energies.
-    for i in range(n_iters):
-        poi, state = reset(temp, poi, concept2energy)
-        for j in range(n_sggs_trials):
-            temp = cooling_schedule(i * n_sggs_trials + j)
-            state, new_data = annealer.send(temp, state)
-            yield state
+    new_data = LabeledExamples()
+    for t in range(n_iters * n_sggs_trials):
+        temp = cooling_schedule(t)
+
+        if t % n_sggs_trials == 0:
+            poi, examples, energy = reset(temp, poi, concept2energy)
+
+        # Sample from proposal distribution.
+        proposed_examples = examples @ new_data
+        try:
+            concept = to_concept(proposed_examples)
+        except ConceptIdException:
+            new_data = LabeledExamples()  # Reject: New data caused problem. 
+            continue
+
+        new_data, metadata = sggs(concept)
+        new_data = new_data.map(lift_path)
+        new_energy = metadata['surprisal'] + concept.size
  
-            # DISS Bookkeeping for resets.
-            poi |= new_data.positive | new_data.negative
-            _, concept, energy = state 
-            concept2energy[concept] = energy
- 
+        yield (proposed_examples, concept, new_energy)
+
+        # DISS Bookkeeping for resets.
+        poi |= new_data.positive | new_data.negative
+        concept2energy[concept] = new_energy
+
+        # Accept/Reject proposal based on energy delta.
+        dE = new_energy - energy
+        if (dE < 0) or (np.exp(-dE / temp) < np.random.rand()): 
+            examples = proposed_examples   # Accept.
+        else:
+            new_data = LabeledExamples()   # Reject.
+

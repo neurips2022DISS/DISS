@@ -1,5 +1,6 @@
 from collections import Counter
 
+import attr
 import dfa
 import funcy as fn
 from dfa.utils import find_subset_counterexample
@@ -9,7 +10,7 @@ from diss.product_mc import ProductMC
 from diss.dfa_concept import DFAConcept
 from diss.domains.gridworld_naive import GridWorldNaive as World
 from diss.domains.gridworld_naive import GridWorldState as State
-from diss import search, LabeledExamples, GradientGuidedSampler
+from diss import diss, LabeledExamples, GradientGuidedSampler
 
 
 def test_gridworld_smoke():
@@ -51,15 +52,6 @@ def test_gridworld_smoke():
        (State(1, 2, '↑'), 'env'),
        (State(1, 1), 'ego'),
     ]]
-    print(gw.to_string(state))
-    def sampler_factory(demos):
-        return GradientGuidedSampler.from_demos(
-            demos=demos,
-            competency=lambda c, t: 0.8,
-            to_chain=lambda c, t, psat: ProductMC.construct(
-                concept=c, tree=t, dyn=gw, max_depth=9, psat=psat, sensor=gw.sensor
-            ),
-        )
 
     base_examples = LabeledExamples(
         positive=[
@@ -90,8 +82,8 @@ def test_gridworld_smoke():
             transition=transition
         )
 
-    def trace(path):
-        return tuple(x for x in map(gw.sensor, path) if x != 'white')
+    def ignore_white(path):
+        return tuple(x for x in path if x != 'white')
 
     def subset_check_wrapper(dfa_candidate):
         partial = partial_dfa(dfa_candidate.inputs)
@@ -99,8 +91,7 @@ def test_gridworld_smoke():
         return ce is None
 
     def to_concept(data):
-        data = data.map(trace)
-        data @= base_examples
+        data = data.map(ignore_white) @ base_examples
 
         # CEGIS for subset.
         for i in range(20):
@@ -117,16 +108,23 @@ def test_gridworld_smoke():
                 if not lbl:
                     data @= LabeledExamples(negative=[prefix])
 
-        return DFAConcept.from_examples(data, filter_pred=subset_check_wrapper) 
+        concept = DFAConcept.from_examples(data, filter_pred=subset_check_wrapper) 
+        # Adjust description size due to subset knowledge.
+        return attr.evolve(concept, size=concept.size / 100)
 
-    dfa_search = search(demos, to_concept, sampler_factory)
+    dfa_search = diss(
+        demos=demos,
+        to_concept=to_concept,
+        to_chain=lambda c, t, psat: ProductMC.construct(
+            concept=c, tree=t, dyn=gw, max_depth=9, 
+            psat=psat, sensor=gw.sensor,
+        ),
+        competency=lambda *_: 0.8,
+        lift_path=lambda x: ignore_white(map(gw.sensor, x)),
+    )
 
     data1, concept1, metadata = next(dfa_search)
-    path1 = [x for x, _ in demos[0]]
-    assert trace(path1) in concept1
+    path1 = ignore_white(gw.sensor(x) for x, _ in demos[0])
+    assert path1 in concept1
 
     data2, concept2, metadata = next(dfa_search)
-    data3, concept3, metadata = next(dfa_search)
-
-    # TODO: Try DISS
-    # TODO: Remove sensor from to_concept.
