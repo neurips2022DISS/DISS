@@ -445,17 +445,17 @@ rect { stroke: black;       stroke-width: 1; }
      inkscape:pageopacity="1"
      inkscape:pageshadow="2"
      inkscape:zoom="2.56"
-     inkscape:cx="-53.320312"
-     inkscape:cy="103.90625"
+     inkscape:cx="101.5625"
+     inkscape:cy="104.10156"
      inkscape:document-units="mm"
-     inkscape:current-layer="layer1"
+     inkscape:current-layer="layer7"
      showgrid="false"
      fit-margin-top="0"
      fit-margin-left="0"
      fit-margin-right="0"
      fit-margin-bottom="0"
-     inkscape:window-width="3440"
-     inkscape:window-height="1390"
+     inkscape:window-width="2039"
+     inkscape:window-height="1365"
      inkscape:window-x="0"
      inkscape:window-y="0"
      inkscape:window-maximized="1"
@@ -510,6 +510,18 @@ rect { stroke: black;       stroke-width: 1; }
       </cc:Work>
     </rdf:RDF>
   </metadata>
+  <g
+     inkscape:groupmode="layer"
+     id="layer7"
+     inkscape:label="Layer 2">
+    <rect
+       style="fill:#494949;fill-opacity:1;stroke-width:3.0381;stroke-linecap:round;stroke-miterlimit:4.1;paint-order:markers stroke fill"
+       id="rect5245"
+       width="294.49945"
+       height="108.46173"
+       x="-135.88092"
+       y="-30.563061" />
+  </g>
   <g
      inkscape:label="Layer 1"
      inkscape:groupmode="layer"

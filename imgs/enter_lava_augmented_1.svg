@@ -167,20 +167,6 @@
          transform="matrix(-0.4,0,0,-0.4,-4,0)"
          inkscape:connector-curvature="0" />
     </marker>
-    <style
-       id="style2363"
-       type="text/css"><![CDATA[transform: translate(-2cm, -4cm);transform: translate(-1cm, -4cm);transform: translate(0cm, -4cm);transform: translate(1cm, -4cm);transform: translate(1cm, -3cm);transform: translate(1cm, -2cm);transform: translate(1cm, -1cm);transform: translate(1cm, 0cm);opacity: 0.5;.background { fill: white; }
-.line { stroke: firebrick; stroke-width: .1mm; }
-.lava { fill: #ff8b8b; }
-.dry { fill: #f4a460; }
-.water { fill: #afafff; }
-.recharge { fill: #ffff00; }
-.normal { fill: white; }
-rect { stroke: black;       stroke-width: 1; }
-.agent { r: 10%;      fill: black;      stroke-width: 2;      stroke: grey;      animation: blinker 4s linear infinite;      animation: move 5s ease forwards; }
-.blinker { 50% }
-.move { 12.5% }
-]]></style>
     <marker
        inkscape:stockid="TriangleOutL-5"
        orient="auto"
@@ -444,11 +430,11 @@ rect { stroke: black;       stroke-width: 1; }
      borderopacity="1.0"
      inkscape:pageopacity="1"
      inkscape:pageshadow="2"
-     inkscape:zoom="1.28"
-     inkscape:cx="-228.51562"
-     inkscape:cy="125"
+     inkscape:zoom="5.12"
+     inkscape:cx="167.48047"
+     inkscape:cy="79.101563"
      inkscape:document-units="mm"
-     inkscape:current-layer="layer4"
+     inkscape:current-layer="layer5"
      showgrid="false"
      fit-margin-top="0"
      fit-margin-left="0"
@@ -510,6 +496,18 @@ rect { stroke: black;       stroke-width: 1; }
       </cc:Work>
     </rdf:RDF>
   </metadata>
+  <g
+     inkscape:groupmode="layer"
+     id="layer5"
+     inkscape:label="background">
+    <rect
+       style="fill:#000000;fill-opacity:0;stroke:none;stroke-width:2.85946;stroke-linecap:round;stroke-miterlimit:4.1;stroke-dasharray:none;stroke-dashoffset:0;paint-order:markers stroke fill"
+       id="rect1129"
+       width="105.277"
+       height="43.833992"
+       x="-12.728754"
+       y="-6.5589342" />
+  </g>
   <g
      inkscape:label="Layer 1"
      inkscape:groupmode="layer"
