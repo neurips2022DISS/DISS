@@ -2,7 +2,7 @@
 Demonstration Informed Specification Search
 
 [![Build Status](https://cloud.drone.io/api/badges/mvcisback/diss/status.svg)](https://cloud.drone.io/mvcisback/diss)
-[![Docs](https://img.shields.io/badge/API-link-color)](https://mvcisback.github.io/diss)
+[![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/mvcisback/DISS/binder)
 [![PyPI version](https://badge.fury.io/py/diss.svg)](https://badge.fury.io/py/diss)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
