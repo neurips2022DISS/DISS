@@ -47,13 +47,19 @@ class DFAConcept:
     size: float
     monitor: MonitorState
 
+    def __hash__(self) -> int:
+        return hash(self.dfa)
+
+    def __eq__(self, other) -> bool:
+        return self.dfa == other.dfa
+
     def __repr__(self) -> str:
         graph, start = dfa.dfa2dict(self.dfa)
         remove_stutter(graph)
         return f'{start}\n{pformat(graph)}'
 
-    def seperate(self, concept: Concept) -> Path | None:
-        if not isinstance(concept, DFAConcept):
+    def seperate(self, other: Concept) -> Path | None:
+        if not isinstance(other, DFAConcept):
             raise NotImplementedError
         return find_equiv_counterexample(self.dfa, other.dfa)
 

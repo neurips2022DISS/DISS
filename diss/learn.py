@@ -163,10 +163,11 @@ class GradientGuidedSampler:
         chain = self.to_chain(concept, tree, self.competency(concept, tree))
         grad = surprisal_grad(chain, tree)
         surprisal_val = surprisal(chain, tree)
+        meta_data = {'surprisal': surprisal_val, 'grad': grad}
 
         examples = LabeledExamples()
         while any(grad) > 0:
-            weights = [abs(x)**2 for x in grad]
+            weights = [x**2 for x in grad]
             node = random.choices(range(len(grad)), weights)[0]  # Sample node.
 
             win = grad[node] < 0  # Target label.
@@ -184,7 +185,7 @@ class GradientGuidedSampler:
                 examples @= LabeledExamples(positive=[path])  # type: ignore
             else:
                 examples @= LabeledExamples(negative=[path])  # type: ignore
-            return examples, {"surprisal": surprisal_val}
+            return examples, meta_data
         raise RuntimeError("Gradient can't be use to guide search?!")
 
 
@@ -267,14 +268,14 @@ def diss(
     to_chain: MarkovChainFact,
     competency: CompetencyEstimator,
     lift_path: Callable[[Path], Path] = lambda x: x,
-    n_iters: int = 5,
-    n_sggs_trials: int = 5,
+    n_iters: int = 25,
+    reset_period: int = 5,
     cooling_schedule: Callable[[int], float] | None = None,
 ) -> Iterable[tuple[LabeledExamples, Optional[Concept]]]:
     """Perform demonstration informed gradiented guided search."""
     if cooling_schedule is None:
         def cooling_schedule(t: int) -> float:
-            return 30*(1 - t / (n_iters*n_sggs_trials)) + 1
+            return 30*(1 - t / n_iters) + 1
 
     sggs = GradientGuidedSampler.from_demos(
         demos=demos,
@@ -285,10 +286,10 @@ def diss(
     poi = set()            # Paths of interest.
     concept2energy = {}    # Concepts seen so far + associated energies.
     new_data = LabeledExamples()
-    for t in range(n_iters * n_sggs_trials):
+    for t in range(n_iters):
         temp = cooling_schedule(t)
 
-        if t % n_sggs_trials == 0:
+        if t % reset_period == 0:
             poi, examples, energy = reset(temp, poi, concept2energy)
 
         # Sample from proposal distribution.
@@ -302,8 +303,9 @@ def diss(
         new_data, metadata = sggs(concept)
         new_data = new_data.map(lift_path)
         new_energy = metadata['surprisal'] + concept.size
- 
-        yield (proposed_examples, concept, new_energy)
+
+        metadata |= {'energy': new_energy, 'conjecture': new_data, 'poi': poi}
+        yield (proposed_examples, concept, metadata)
 
         # DISS Bookkeeping for resets.
         poi |= new_data.positive | new_data.negative
