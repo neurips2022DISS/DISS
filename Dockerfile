@@ -6,6 +6,7 @@ RUN apt-get update && apt-get install -y \
     graphviz
 USER jovyan    
 # Install from requirements.txt file
+COPY imgs /home/jovyan/imgs
 COPY requirements.txt /tmp/
 COPY experiment.ipynb /home/jovyan/
 RUN pip install wheel
