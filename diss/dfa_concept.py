@@ -95,9 +95,7 @@ class DFAConcept:
         # number of non-stuttering labeled edges.
         graph, start = dfa.dfa2dict(lang)
         remove_stutter(graph)
-        state_bits = np.log2(len(graph))
-        n_edges = count_edges(graph)
-        size = state_bits * (1 + 2 * n_edges * np.log2(len(lang.inputs))) + 1
+        size = np.log(count_edges(graph))
 
         # Wrap dfa to conform to DFA Monitor API.
         @attr.frozen
