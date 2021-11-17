@@ -325,4 +325,3 @@ def diss(
             examples = proposed_examples   # Accept.
         else:
             new_data = LabeledExamples()   # Reject.
-
