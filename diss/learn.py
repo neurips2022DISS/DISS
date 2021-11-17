@@ -225,6 +225,7 @@ def reset(
         temp: float,
         poi: set[Any],
         concept2energy: dict[Concept, float],
+        cmf_threshold: float = 0.8,
 ) -> tuple[PathsOfInterest, LabeledExamples, float]:
     poi = set(poi)  # Decouple from input POI.
 
@@ -237,8 +238,8 @@ def reset(
     pmf /= sum(pmf)  # Normalize.
 
     # 3. Compute distiguishing strings for top 80%.
-    cmf = np.cumsum(pmf)        # Cummalitive mass function.
-    idx = (cmf <= 0.8).sum()    # idx of cutoff.
+    cmf = np.cumsum(pmf)                          # Cummalitive mass function.
+    idx = (cmf <= cmf_threshold).sum()    # idx of cutoff.
     to_distinguish = combinations(sorted_concepts[:idx], 2)
     poi |= {c1.seperate(c2) for c1, c2 in to_distinguish}
 
@@ -271,6 +272,9 @@ def diss(
     n_iters: int = 25,
     reset_period: int = 5,
     cooling_schedule: Callable[[int], float] | None = None,
+    size_weight: float = 1,
+    surprise_weight: float = 1,
+    cmf_threshold: float = 0.8,
 ) -> Iterable[tuple[LabeledExamples, Optional[Concept]]]:
     """Perform demonstration informed gradiented guided search."""
     if cooling_schedule is None:
@@ -283,6 +287,8 @@ def diss(
         competency=competency,
     )
 
+    weights = np.array([size_weight, surprise_weight])
+
     poi = set()            # Paths of interest.
     concept2energy = {}    # Concepts seen so far + associated energies.
     new_data = LabeledExamples()
@@ -290,7 +296,9 @@ def diss(
         temp = cooling_schedule(t)
 
         if t % reset_period == 0:
-            poi, examples, energy = reset(temp, poi, concept2energy)
+            poi, examples, energy = reset(
+                temp, poi, concept2energy, cmf_threshold
+            )
 
         # Sample from proposal distribution.
         proposed_examples = examples @ new_data
@@ -302,7 +310,7 @@ def diss(
 
         new_data, metadata = sggs(concept)
         new_data = new_data.map(lift_path)
-        new_energy = metadata['surprisal'] + concept.size
+        new_energy = weights @ [concept.size, metadata['surprisal']]
 
         metadata |= {'energy': new_energy, 'conjecture': new_data, 'poi': poi}
         yield (proposed_examples, concept, metadata)

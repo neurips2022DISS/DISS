@@ -37,4 +37,3 @@ class AnnotatedMarkovChain(Protocol):
     @staticmethod
     def from_tree(tree: PrefixTree) -> AnnotatedMarkovChain:
         ...
-
