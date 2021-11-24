@@ -8,7 +8,7 @@
    height="2.8703899in"
    viewBox="0 0 828.06913 275.55744"
    sodipodi:docname="example_domain_3_2.svg"
-   inkscape:version="1.1.1 (3bf5ae0d25, 2021-09-20)"
+   inkscape:version="1.1.1 (3bf5ae0d25, 2021-09-20, custom)"
    xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
    xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
    xmlns:xlink="http://www.w3.org/1999/xlink"
@@ -837,7 +837,7 @@
      inkscape:pagecheckerboard="1"
      showgrid="false"
      inkscape:zoom="0.5"
-     inkscape:cx="-743"
+     inkscape:cx="-1391"
      inkscape:cy="486"
      inkscape:window-width="3440"
      inkscape:window-height="1390"
@@ -856,7 +856,7 @@
      id="layer4"
      inkscape:label="Image 1">
     <rect
-       style="fill:#494949;fill-opacity:1;stroke-width:11.4826;stroke-linecap:round;stroke-miterlimit:4.1;paint-order:markers stroke fill"
+       style="fill:#073642;fill-opacity:1;stroke-width:11.4826;stroke-linecap:round;stroke-miterlimit:4.1;paint-order:markers stroke fill"
        id="rect5245"
        width="1113.0688"
        height="409.93411"
