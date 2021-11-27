@@ -1107,7 +1107,7 @@ sat = ["py-aiger-sat (>=3.0.4,<4.0.0)"]
 
 [[package]]
 name = "py-aiger-dfa"
-version = "0.3.3"
+version = "0.4.1"
 description = "Library for moving between sequential circuits AIGs and DFAs."
 category = "dev"
 optional = false
@@ -1119,7 +1119,7 @@ bidict = ">=0.21.0,<0.22.0"
 dfa = ">=4,<5"
 funcy = ">=1.12,<2.0"
 py-aiger = ">=6.0.0,<7.0.0"
-py-aiger-bv = ">=4.0.0,<5.0.0"
+py-aiger-bv = ">=4.7.4,<5.0.0"
 py-aiger-ptltl = ">=3.0.0,<4.0.0"
 pyrsistent = ">=0.18,<0.19"
 
@@ -1630,7 +1630,7 @@ notebook = ">=4.4.1"
 [metadata]
 lock-version = "1.1"
 python-versions = ">=3.9,<3.11"  # scipy
-content-hash = "4d677be144a878863d929b79e2d1a336c891a40d9baff9725fc5fb350f9cbad9"
+content-hash = "17396f87cf7833644b585ac3d81f5caad184524b41c916c71ba34e9ba67db331"
 
 [metadata.files]
 anyio = [
@@ -2323,8 +2323,8 @@ py-aiger-coins = [
     {file = "py_aiger_coins-3.3.6-py3-none-any.whl", hash = "sha256:9789428d0b664455f4373c368d86fd8fd8e4b40c73e0acf3e81cba7e28be8420"},
 ]
 py-aiger-dfa = [
-    {file = "py-aiger-dfa-0.3.3.tar.gz", hash = "sha256:725a9c15621e5118c1fbbdc64ce6fd6ca8411b58b838f6f75e7f7f85aa49a765"},
-    {file = "py_aiger_dfa-0.3.3-py3-none-any.whl", hash = "sha256:ded1f22b37d1026433d716c04beeee5cca730fdfa7ae8de8d6ee1d737a630253"},
+    {file = "py-aiger-dfa-0.4.1.tar.gz", hash = "sha256:18de313b6ca704be0662001070fa8931aff582ef476c8ea976732f9b280487d1"},
+    {file = "py_aiger_dfa-0.4.1-py3-none-any.whl", hash = "sha256:7405c8738fabd56d1fa1cae3bdc8442d97252ff8893e58289c8a3570aa7d7590"},
 ]
 py-aiger-discrete = [
     {file = "py-aiger-discrete-0.1.9.tar.gz", hash = "sha256:5918c1e5d8085de8d347a5dfb4c2146a1c733dd586850cd1ce55a8961f416503"},
