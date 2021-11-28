@@ -22,7 +22,6 @@ __all__ = ['DFAConcept', 'Sensor']
 
 DFA = dfa.DFA
 Sensor = Callable[[dfa.State], dfa.Letter] 
-TEMP = 20
 ENUM_MAX = 10
 
 
@@ -68,7 +67,8 @@ class DFAConcept:
             data: LabeledExamples, 
             filter_pred: Callable[[DFA], bool] = None,
             alphabet: frozenset = None,
-            find_dfas=find_dfas) -> DFAConcept:
+            find_dfas=find_dfas,
+            temp: float = 1) -> DFAConcept:
         langs = find_dfas(
             data.positive, data.negative, 
             alphabet=alphabet,
@@ -82,7 +82,7 @@ class DFAConcept:
             raise ConceptIdException
 
         concepts = [DFAConcept.from_dfa(lang) for lang in langs]
-        weights = [np.exp(-c.size / TEMP) for c in concepts]
+        weights = [np.exp(-c.size / temp) for c in concepts]
         return random.choices(concepts, weights)[0]  # type: ignore
 
     @staticmethod

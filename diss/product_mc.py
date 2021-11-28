@@ -162,6 +162,8 @@ class ProductMC:
             rationality: Optional[float] = None,
             psat: Optional[float] = None,
             sensor: Callable[[State], Any] = lambda x: x,
+            rtol: Optional[float] = None,
+            xtol: Optional[float] = None,
         ) -> ProductMC:
         """Constructs a tabular policy by unrolling of dynamics/concept."""
         dag = product_dag(concept, tree, dyn, max_depth, sensor)
@@ -169,7 +171,7 @@ class ProductMC:
         if rationality is None:
             if psat is None:
                 psat = empirical_psat(tree, concept)
-            policy = TabularPolicy.from_psat(dag, psat)
+            policy = TabularPolicy.from_psat(dag, psat, xtol=xtol, rtol=rtol)
         else:
             policy = TabularPolicy.from_rationality(dag, rationality)
 

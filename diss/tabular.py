@@ -71,7 +71,12 @@ class TabularPolicy:
         return lprob if log else np.exp(lprob)  # type: ignore
 
     @staticmethod
-    def from_psat(unrolled: nx.DiGraph, psat: float) -> TabularPolicy:
+    def from_psat(
+        unrolled: nx.DiGraph,
+        psat: float,
+        rtol: Optional[float] = None,
+        xtol: Optional[float] = None,
+    ) -> TabularPolicy:
         @lru_cache(maxsize=3)
         def get_critic(rationality: float) -> TabularPolicy:
             return TabularPolicy.from_rationality(unrolled, rationality)
@@ -82,11 +87,18 @@ class TabularPolicy:
         if f(0) >= 0:
             return get_critic(0)
 
-        # Doubling trick.
+        # Set parameters for root finder.
+        kwargs = {}
+        if xtol is not None:
+            kwargs['xtol'] = xtol
+        if rtol is not None:
+            kwargs['rtol'] = rtol
+
+        # Doubling trick to find correct bounds.
         for i in range(10):
             rat: float = 1 << i
             if f(rat) > 0:
-                rat = bisect(f, 0, rat)
+                rat = bisect(f, 0, rat, **kwargs)
                 break
         return get_critic(rat)
 
