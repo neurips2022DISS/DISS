@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "diss"
-version = "0.2.2"
+version = "0.2.3"
 description = "Demonstration Informed Specification Search"
 authors = ["Marcell Vazquez-Chanlatte <mvc@linux.com>"]
 license = "MIT"
@@ -31,7 +31,7 @@ py-aiger-coins = "^3.3.6"
 py-aiger-gridworld = "^0.4.1"
 py-aiger-ptltl = "^3.1.0"
 jupyterthemes = "^0.20.0"
-py-aiger-dfa = "^0.3.3"
+py-aiger-dfa = "^0.4.1"
 jupyterlab = "^3.2.3"
 
 [build-system]
