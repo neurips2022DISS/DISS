@@ -322,6 +322,7 @@ def diss(
         # Accept/Reject proposal based on energy delta.
         dE = new_energy - energy
         if (dE < 0) or (np.exp(-dE / temp) < np.random.rand()): 
+            energy = new_energy
             examples = proposed_examples   # Accept.
         else:
             new_data = LabeledExamples()   # Reject.
