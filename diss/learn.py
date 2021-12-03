@@ -37,6 +37,10 @@ class LabeledExamples:
     def size(self) -> int:
         return self.dist(LabeledExamples())
 
+    @property
+    def unlabeled(self) -> Examples:
+        return self.positive | self.negative
+
     def __repr__(self) -> str:
         pos, neg = set(self.positive), set(self.negative)
         return f'+: {pformat(pos)}\n--------------\n-: {pformat(neg)}'
@@ -221,48 +225,6 @@ def search(
 PathsOfInterest = set[Any]
 
 
-def reset(
-        temp: float,
-        poi: set[Any],
-        concept2energy: dict[Concept, float],
-        cmf_threshold: float = 0.8,
-) -> tuple[PathsOfInterest, LabeledExamples, float]:
-    poi = set(poi)  # Decouple from input POI.
-
-    # 1. Sort concepts by increasing energy and create energy vector.
-    sorted_concepts = sorted(list(concept2energy), key=concept2energy.get)
-    energies = np.array([concept2energy[c] for c in sorted_concepts])
-
-    # 2. Turn energy vector into annealed probability mass function.
-    pmf = np.exp(-energies / temp)
-    pmf /= sum(pmf)  # Normalize.
-
-    # 3. Compute distiguishing strings for top 80%.
-    cmf = np.cumsum(pmf)                          # Cummalitive mass function.
-    idx = (cmf <= cmf_threshold).sum()    # idx of cutoff.
-    to_distinguish = combinations(sorted_concepts[:idx], 2)
-    poi |= {c1.seperate(c2) for c1, c2 in to_distinguish}
-
-    # 4. Compute current support's belief on unlabeled strings of interest.
-    p_accept = {}
-    for word in poi:
-        votes = np.array([(word in c) for c in sorted_concepts])
-        p_accept[word] = pmf @ votes
-
-    # 5. Set examples based on marginalizing over current concept class.
-    positive, negative = set(), set()
-    for x, belief in p_accept.items():
-        confidence = 2*(belief - 0.5 if belief > 0.5 else 0.5 - belief)
-        if np.random.rand() > confidence:
-            continue
-        elif belief < 0.5:
-            negative.add(x)
-        elif belief > 0.5:
-            positive.add(x)
-    examples = LabeledExamples(positive, negative)  
-    return poi, examples, float('inf')
-
-
 def diss(
     demos: Demos, 
     to_concept: Identify,
@@ -274,7 +236,6 @@ def diss(
     cooling_schedule: Callable[[int], float] | None = None,
     size_weight: float = 1,
     surprise_weight: float = 1,
-    cmf_threshold: float = 0.8,
 ) -> Iterable[tuple[LabeledExamples, Optional[Concept]]]:
     """Perform demonstration informed gradiented guided search."""
     if cooling_schedule is None:
@@ -288,22 +249,20 @@ def diss(
     )
 
     weights = np.array([size_weight, surprise_weight])
-
-    poi = set()            # Paths of interest.
     concept2energy = {}    # Concepts seen so far + associated energies.
+    concept2data = {}      # Concepts seen so far + associated data.
     new_data = LabeledExamples()
     for t in range(n_iters):
-        temp = cooling_schedule(t)
-
-        if t % reset_period == 0:
-            poi, examples, energy = reset(
-                temp, poi, concept2energy, cmf_threshold
-            )
+        if (t % reset_period) == 0:  # Reset to best example set.
+            concept = max(concept2energy, key=concept2energy.get, default=None)
+            examples = concept2data.get(concept, LabeledExamples())
+            energy = concept2energy.get(concept, float('inf'))
 
         # Sample from proposal distribution.
         proposed_examples = examples @ new_data
         try:
             concept = to_concept(proposed_examples)
+            concept2data.setdefault(concept, proposed_examples)
         except ConceptIdException:
             new_data = LabeledExamples()  # Reject: New data caused problem. 
             continue
@@ -312,17 +271,16 @@ def diss(
         new_data = new_data.map(lift_path)
         new_energy = weights @ [concept.size, metadata['surprisal']]
 
-        metadata |= {'energy': new_energy, 'conjecture': new_data, 'poi': poi}
+        metadata |= {'energy': new_energy, 'conjecture': new_data}
         yield (proposed_examples, concept, metadata)
 
         # DISS Bookkeeping for resets.
-        poi |= new_data.positive | new_data.negative
         concept2energy[concept] = new_energy
 
         # Accept/Reject proposal based on energy delta.
         dE = new_energy - energy
+        temp = cooling_schedule(t)
         if (dE < 0) or (np.exp(-dE / temp) < np.random.rand()): 
-            energy = new_energy
-            examples = proposed_examples   # Accept.
+            energy, examples = new_energy, proposed_examples  # Accept.
         else:
-            new_data = LabeledExamples()   # Reject.
+            new_data = LabeledExamples()                      # Reject.
