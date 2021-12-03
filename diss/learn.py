@@ -152,26 +152,28 @@ class GradientGuidedSampler:
     tree: PrefixTree
     to_chain: MarkovChainFact
     competency: CompetencyEstimator
+    greed: float = 2  # Controls how biased the sampling is to large gradients.
 
     @staticmethod
     def from_demos(
             demos: Demos, 
             to_chain: MarkovChainFact, 
             competency: CompetencyEstimator,
+            greed: float,
     ) -> GradientGuidedSampler:
         tree = PrefixTree.from_demos(demos)
-        return GradientGuidedSampler(tree, to_chain, competency)
+        return GradientGuidedSampler(tree, to_chain, competency, greed)
 
     def __call__(self, concept: Concept) -> tuple[LabeledExamples, Any]:
         tree = self.tree
         chain = self.to_chain(concept, tree, self.competency(concept, tree))
-        grad = surprisal_grad(chain, tree)
+        grad = np.array(surprisal_grad(chain, tree))
         surprisal_val = surprisal(chain, tree)
         meta_data = {'surprisal': surprisal_val, 'grad': grad}
 
         examples = LabeledExamples()
         while any(grad) > 0:
-            weights = [x**2 for x in grad]
+            weights = np.abs(grad)**self.greed
             node = random.choices(range(len(grad)), weights)[0]  # Sample node.
 
             win = grad[node] < 0  # Target label.
@@ -236,6 +238,7 @@ def diss(
     cooling_schedule: Callable[[int], float] | None = None,
     size_weight: float = 1,
     surprise_weight: float = 1,
+    sgs_greed: float = 2,
 ) -> Iterable[tuple[LabeledExamples, Optional[Concept]]]:
     """Perform demonstration informed gradiented guided search."""
     if cooling_schedule is None:
@@ -246,6 +249,7 @@ def diss(
         demos=demos,
         to_chain=to_chain,
         competency=competency,
+        greed=sgs_greed,
     )
 
     weights = np.array([size_weight, surprise_weight])
