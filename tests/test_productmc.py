@@ -5,8 +5,8 @@ import dfa
 from pytest import approx
 
 from diss import DemoPrefixTree, Edge, Node, SampledPath, Player
-from diss.product_mc import ProductMC, Moves  
-from diss.dfa_concept import DFAConcept
+from diss.planners.product_mc import ProductMC, Moves  
+from diss.concept_classes.dfa_concept import DFAConcept
 from diss import search, LabeledExamples, GradientGuidedSampler
 
 
@@ -92,6 +92,7 @@ def test_productmc():
             to_chain=lambda c, t, _: ProductMC.construct(
                 concept=c, tree=t, dyn=dyn, max_depth=None
             ),
+            greed=2
         )
 
     sampler = sampler_factory(demos)

@@ -11,6 +11,7 @@ Edge = tuple[int, int]
 from diss.prefix_tree import *
 from diss.annotated_mc import *
 from diss.learn import *
+from diss.planners.product_mc import *
 
 __all__ = [
     'AnnotatedMarkovChain',
@@ -22,6 +23,7 @@ __all__ = [
     'Edge',
     'LabeledExamples',
     'MonitorState',
+    'Moves',
     'Path',
     'Player',
     'SampledPath',

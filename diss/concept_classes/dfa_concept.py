@@ -13,8 +13,7 @@ from pysat.solvers import Minicard
 from dfa_identify import find_dfas
 from scipy.special import softmax
 
-from diss import State, Path, LabeledExamples, ConceptIdException
-from diss.product_mc import MonitorState
+from diss import State, Path, LabeledExamples, ConceptIdException, MonitorState
 
 
 __all__ = ['DFAConcept', 'Sensor']

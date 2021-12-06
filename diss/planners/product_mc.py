@@ -12,7 +12,7 @@ import numpy as np
 
 from diss import Edge, Concept, Node, Player, SampledPath, State
 from diss import DemoPrefixTree as PrefixTree
-from diss.tabular import TabularPolicy 
+from diss.planners.tabular import TabularPolicy 
 
 
 __all__ = [

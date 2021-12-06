@@ -4,7 +4,7 @@ import numpy as np
 import funcy as fn
 import networkx as nx
 
-from diss.tabular import TabularPolicy
+from diss.planners.tabular import TabularPolicy
 
 
 def test_tabular_and():

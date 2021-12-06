@@ -6,8 +6,8 @@ import funcy as fn
 from dfa.utils import find_subset_counterexample
 from dfa_identify import find_dfa
 
-from diss.product_mc import ProductMC
-from diss.dfa_concept import DFAConcept
+from diss.planners.product_mc import ProductMC
+from diss.concept_classes.dfa_concept import DFAConcept
 from diss.domains.gridworld_naive import GridWorldNaive as World
 from diss.domains.gridworld_naive import GridWorldState as State
 from diss import diss, LabeledExamples, GradientGuidedSampler
