@@ -4,6 +4,7 @@ from itertools import product
 from typing import Any, Literal, Optional, Union
 
 import attr
+import funcy as fn
 
 from diss import State, Player, Moves
 
@@ -94,3 +95,21 @@ class GridWorldNaive:
             row = ((x, y) for x in range(1, 1 + self.dim))
             buff += ''.join(map(tile, row)) + '\n'
         return buff
+
+    @staticmethod
+    def from_string(buff, start, codec, slip_prob=1/32) -> GridWorldNaive:
+        overlay = {}
+        rows = buff.split()
+        widths = {len(row) for row in rows}
+        assert len(widths) == 1
+        dim = fn.first(widths)
+        assert len(rows) == dim
+        
+        for y, row in enumerate(rows):
+            aps = (codec.get(s, 'white') for s in row)
+            overlay.update({(x+ 1, y + 1): ap for x, ap in enumerate(aps)}) 
+
+        return GridWorldNaive(
+            dim=dim, start=GridWorldState(*start),
+            overlay=overlay, slip_prob=slip_prob
+        )
