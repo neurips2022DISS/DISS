@@ -1,13 +1,17 @@
-import dfa
-import pydot
-from diss.concept_classes.dfa_concept import remove_stutter, DFAConcept
 from collections import defaultdict
+
+import dfa
+import funcy as fn
+import pydot
+from IPython.display import SVG
+from IPython.display import HTML as html_print
+
+from diss.concept_classes.dfa_concept import remove_stutter, DFAConcept
 
 
 COLOR_ALIAS = {
     'white': 'white',
     'yellow': '#ffff00', 
-    #'brown': '#ffb081',
     'red': '#ff8b8b',
     'blue': '#afafff', 
     'green' : '#8ff45d'
@@ -46,8 +50,46 @@ def get_dot(dfa_):
 
 
 def view_dfa(dfa_or_concept):
-    from IPython.display import SVG
     if isinstance(dfa_or_concept, DFAConcept):
         dfa_or_concept = dfa_or_concept.dfa
     pdot = get_dot(dfa_or_concept)
     display(SVG(pdot.create_svg()))
+
+
+def tile(color='black'):
+    color = COLOR_ALIAS.get(color, color)
+    s = '&nbsp;'*4
+    return f"<text style='border: solid 1px;background-color:{color}'>{s}</text>"
+
+
+def ap_at_state(x, y, world):
+    """Use sensor to create colored tile."""
+    if (x, y) in world.overlay:
+        color = world.overlay[(x,y)]
+
+        if color in COLOR_ALIAS.keys():
+            return tile(color)
+    return tile('white')
+
+
+def print_map(world):
+    """Scan the board row by row and print colored tiles."""
+    order = range(1, world.dim + 1)
+    buffer = ''
+    for y in order:
+        chars = (ap_at_state(x, y, world) for x in order)
+        buffer += '&nbsp;'.join(chars) + '<br>'
+    display(html_print(buffer))
+
+
+def print_trc(path, world, idx=0):
+    actions = [s.action for s, kind in path if kind == 'env']
+    states = [s for s, kind in path if kind == 'ego']
+    obs = [ap_at_state(pos.x, pos.y, world) for pos in states]
+    if len(actions) > len(obs):
+        obs.append('')
+    elif len(obs) > len(actions):
+        actions.append('')
+    trc = fn.interleave(obs, actions)
+
+    display(html_print(f'trc {idx}:&nbsp;&nbsp;&nbsp;' + ''.join(trc)))

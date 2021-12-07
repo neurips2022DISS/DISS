@@ -113,3 +113,13 @@ class GridWorldNaive:
             dim=dim, start=GridWorldState(*start),
             overlay=overlay, slip_prob=slip_prob
         )
+
+    def path(self, seq):
+        path = []
+        for curr, prev in fn.with_prev(seq):
+            if isinstance(curr, str):
+                state, player = GridWorldState(*prev, action=curr), 'env'
+            else:
+                state, player = GridWorldState(*curr), 'ego'
+            path.append((state, player))
+        return path

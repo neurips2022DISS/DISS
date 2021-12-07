@@ -50,10 +50,33 @@ BASE_EXAMPLES = LabeledExamples(
         ('yellow', 'yellow'),
     ],
     negative=[
-        (), ('red',), ('red', 'red'),
-        ('red', 'yellow'), ('yellow', 'red'),
+        (),
+        ('blue',),
+        ('blue', 'blue'),
+        ('blue', 'green'),
+        ('blue', 'red'),
+        ('blue', 'red', 'green'),
+        ('blue', 'red', 'green', 'yellow'),
+        ('blue', 'red', 'yellow'),
+        ('red',),
+        ('red', 'blue'),
+        ('red', 'blue', 'yellow'),
+        ('red', 'green'),
+        ('red', 'green', 'green'),
+        ('red', 'green', 'green', 'yellow'),
+        ('red', 'green', 'yellow'),
+        ('red', 'red'),
+        ('red', 'red', 'green'),
+        ('red', 'red', 'green', 'yellow'),
+        ('red', 'red', 'yellow'),
+        ('red', 'yellow'),
+        ('red', 'yellow', 'green'),
+        ('red', 'yellow', 'green', 'yellow'),
+        ('yellow', 'red'),
+        ('yellow', 'red', 'green'),
+        ('yellow', 'red', 'green', 'yellow'),
         ('yellow', 'red', 'yellow'),
-        ('yellow', 'yellow', 'red'),
+        ('yellow', 'yellow', 'red')
     ]
 )
 
@@ -78,15 +101,29 @@ class PartialDFAIdentifier:
         data = data.map(ignore_white)
         data @= self.base_examples
         for i in range(20):
-            mydfa = find_dfa(data.positive, data.negative, order_by_stutter=True) 
-            if mydfa is None:
-                raise ConceptIdException
-            ce = self.subset_ce(mydfa)
-            if ce is None:
-                break
-            self.base_examples @= LabeledExamples(negative=[ce])
-            data @= LabeledExamples(negative=[ce])
-   
+            tests = fn.take(5, find_dfas(
+                data.positive,
+                data.negative,
+                order_by_stutter=True,
+                alphabet=self.partial.dfa.inputs,
+            ))
+            new_data = LabeledExamples()
+            for test in tests:
+                assert test is not None
+                ce = self.subset_ce(test)
+                if ce is None:
+                    continue
+                new_data @= LabeledExamples(negative=[ce])
+                partial = self.partial_dfa(test.inputs)
+                for k, lbl in enumerate(partial.transduce(ce)):
+                    prefix = ce[:k]
+                    if not lbl:
+                        new_data @= LabeledExamples(negative=[prefix])
+                data @= new_data
+                self.base_examples @= new_data
+                if new_data.size == 0:
+                    break
+  
         concept = DFAConcept.from_examples(
             data=data,
             filter_pred=self.is_subset,
