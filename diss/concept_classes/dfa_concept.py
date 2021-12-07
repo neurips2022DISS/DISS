@@ -21,7 +21,7 @@ __all__ = ['DFAConcept', 'Sensor']
 
 DFA = dfa.DFA
 Sensor = Callable[[dfa.State], dfa.Letter] 
-ENUM_MAX = 10
+ENUM_MAX = 5
 
 
 def remove_stutter(graph: dfa.DFADict) -> None:
