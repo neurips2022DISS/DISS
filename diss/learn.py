@@ -296,7 +296,7 @@ def diss(
         # Accept/Reject proposal based on energy delta.
         dE = new_energy - energy
         temp = cooling_schedule(t)
-        if (dE < 0) or (np.exp(-dE / temp) < np.random.rand()): 
+        if (dE < 0) or (np.exp(-dE / temp) > np.random.rand()): 
             energy, examples = new_energy, proposed_examples  # Accept.
         else:
             new_data = LabeledExamples()                      # Reject.

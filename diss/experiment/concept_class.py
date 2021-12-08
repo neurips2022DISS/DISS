@@ -1,9 +1,11 @@
+from __future__ import annotations
 from typing import Any, Optional, Sequence
 
 import attr
 import funcy as fn
 import dfa
 import numpy as np
+from functools import lru_cache
 from dfa import DFA
 from dfa.utils import find_subset_counterexample, find_equiv_counterexample
 from dfa_identify import find_dfa, find_dfas
@@ -81,7 +83,48 @@ BASE_EXAMPLES = LabeledExamples(
 )
 
 
-@attr.define
+@lru_cache
+def find_dfas2(accepting, rejecting, alphabet, order_by_stutter=False):
+    dfas = find_dfas(
+        accepting,
+        rejecting,
+        alphabet=alphabet,
+        order_by_stutter=order_by_stutter,
+    )
+    return fn.take(5, dfas)
+
+
+@lru_cache
+def augment(self: PartialDFAIdentifier, data: LabeledExamples) -> LabeledExamples:
+    data = data.map(ignore_white) @ self.base_examples
+
+    for i in range(20):
+        tests = find_dfas2(
+            data.positive,
+            data.negative,
+            order_by_stutter=True,
+            alphabet=self.partial.dfa.inputs,
+        )
+        new_data = LabeledExamples()
+        for test in tests:
+            assert test is not None
+            ce = self.subset_ce(test)
+            if ce is None:
+                continue
+            new_data @= LabeledExamples(negative=[ce])
+            partial = self.partial_dfa(test.inputs)
+            for k, lbl in enumerate(partial.transduce(ce)):
+                prefix = ce[:k]
+                if not lbl:
+                    new_data @= LabeledExamples(negative=[prefix])
+            data @= new_data
+            if new_data.size == 0:
+                break
+    return data
+
+
+
+@attr.frozen
 class PartialDFAIdentifier:
     partial: DFAConcept = attr.ib(converter=DFAConcept.from_dfa)
     base_examples: LabeledExamples = LabeledExamples()
@@ -98,36 +141,13 @@ class PartialDFAIdentifier:
         return self.subset_ce(candidate) is None
 
     def __call__(self, data: LabeledExamples) -> DFAConcept:
-        data = data.map(ignore_white)
-        data @= self.base_examples
-        for i in range(20):
-            tests = fn.take(5, find_dfas(
-                data.positive,
-                data.negative,
-                order_by_stutter=True,
-                alphabet=self.partial.dfa.inputs,
-            ))
-            new_data = LabeledExamples()
-            for test in tests:
-                assert test is not None
-                ce = self.subset_ce(test)
-                if ce is None:
-                    continue
-                new_data @= LabeledExamples(negative=[ce])
-                partial = self.partial_dfa(test.inputs)
-                for k, lbl in enumerate(partial.transduce(ce)):
-                    prefix = ce[:k]
-                    if not lbl:
-                        new_data @= LabeledExamples(negative=[prefix])
-                data @= new_data
-                self.base_examples @= new_data
-                if new_data.size == 0:
-                    break
-  
+        data = augment(self, data)
+
         concept = DFAConcept.from_examples(
             data=data,
             filter_pred=self.is_subset,
             alphabet=self.partial.dfa.inputs,
+            find_dfas=find_dfas2,
         ) 
         # Adjust size to account for subset information.
         return attr.evolve(concept, size=concept.size - self.partial.size)
