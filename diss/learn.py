@@ -245,7 +245,7 @@ def diss(
     """Perform demonstration informed gradiented guided search."""
     if cooling_schedule is None:
         def cooling_schedule(t: int) -> float:
-            return 30*(1 - t / n_iters) + 1
+            return 100*(1 - t / n_iters) + 1
 
     sggs = GradientGuidedSampler.from_demos(
         demos=demos,
@@ -266,6 +266,7 @@ def diss(
             concept = max(concept2energy, key=concept2energy.get, default=None)
             examples = concept2data.get(concept, LabeledExamples())
             energy = concept2energy.get(concept, float('inf'))
+            new_data = LabeledExamples()
 
         # Sample from proposal distribution.
         proposed_examples = examples @ new_data
@@ -282,7 +283,11 @@ def diss(
         new_data = new_data.map(lift_path)
         new_energy = weights @ [concept.size, metadata['surprisal']]
 
-        metadata |= {'energy': new_energy, 'conjecture': new_data}
+        metadata |= {
+            'energy': new_energy,
+            'conjecture': new_data,
+            'data': proposed_examples,
+        }
         yield (proposed_examples, concept, metadata)
 
         # DISS Bookkeeping for resets.
