@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import random
+import signal
 from itertools import combinations
 from pprint import pformat
 from typing import Any, Callable, Iterable, Optional, Protocol, Sequence
@@ -239,6 +240,7 @@ def diss(
     size_weight: float = 1,
     surprise_weight: float = 1,
     sgs_greed: float = 2,
+    synth_timeout=15,
 ) -> Iterable[tuple[LabeledExamples, Optional[Concept]]]:
     """Perform demonstration informed gradiented guided search."""
     if cooling_schedule is None:
@@ -251,6 +253,9 @@ def diss(
         competency=competency,
         greed=sgs_greed,
     )
+    def handler(signum, frame):
+        raise ConceptIdException
+    signal.signal(signal.SIGALRM, handler)
 
     weights = np.array([size_weight, surprise_weight])
     concept2energy = {}    # Concepts seen so far + associated energies.
@@ -265,7 +270,9 @@ def diss(
         # Sample from proposal distribution.
         proposed_examples = examples @ new_data
         try:
+            signal.alarm(synth_timeout)
             concept = to_concept(proposed_examples)
+            signal.alarm(0)  # Unset alarm.
             concept2data.setdefault(concept, proposed_examples)
         except ConceptIdException:
             new_data = LabeledExamples()  # Reject: New data caused problem. 
