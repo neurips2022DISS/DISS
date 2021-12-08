@@ -11,6 +11,8 @@ from dfa.utils import find_subset_counterexample, find_equiv_counterexample
 from dfa_identify import find_dfa, find_dfas
 
 from diss import LabeledExamples, ConceptIdException
+from diss import DemoPrefixTree as PrefixTree
+from diss.learn import surprisal
 from diss.concept_classes.dfa_concept import DFAConcept
 
 
@@ -84,14 +86,14 @@ BASE_EXAMPLES = LabeledExamples(
 
 
 @lru_cache
-def find_dfas2(accepting, rejecting, alphabet, order_by_stutter=False):
+def find_dfas2(accepting, rejecting, alphabet, order_by_stutter=False, N=5):
     dfas = find_dfas(
         accepting,
         rejecting,
         alphabet=alphabet,
         order_by_stutter=order_by_stutter,
     )
-    return fn.take(5, dfas)
+    return fn.take(N, dfas)
 
 
 @lru_cache
@@ -151,3 +153,36 @@ class PartialDFAIdentifier:
         ) 
         # Adjust size to account for subset information.
         return attr.evolve(concept, size=concept.size - self.partial.size)
+
+
+def enumerative_search(
+    demos: Demos, 
+    identifer: PartialDFAIdentifier(),
+    to_chain: MarkovChainFact,
+    competency: CompetencyEstimator,
+    n_iters: int = 25,
+    size_weight: float = 1,
+    surprise_weight: float = 1,
+):
+    tree = PrefixTree.from_demos(demos)
+    weights = np.array([size_weight, surprise_weight])
+    data = augment(identifer, LabeledExamples())
+    dfas = find_dfas(
+        accepting=data.positive,
+        rejecting=data.negative,
+        order_by_stutter=True,
+        allow_unminimized=True,
+        alphabet=identifer.partial.dfa.inputs
+    )
+    dfas = filter(identifer.is_subset, dfas)
+    for i, lang in enumerate(dfas):
+        if i >= n_iters:
+            break
+        concept = DFAConcept.from_dfa(lang)
+        concept = attr.evolve(concept, size=concept.size - identifer.partial.size)
+        chain = to_chain(concept, tree, competency(concept, tree))
+        metadata = {
+            'energy': weights @ [concept.size, surprisal(chain, tree)],
+        }
+ 
+        yield LabeledExamples(), concept, metadata
