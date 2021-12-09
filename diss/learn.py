@@ -8,6 +8,7 @@ from typing import Any, Callable, Iterable, Optional, Protocol, Sequence
 
 import attr
 import numpy as np
+from scipy.special import softmax
 
 from diss import AnnotatedMarkovChain as MarkovChain
 from diss import Node, Demos, Path
@@ -153,17 +154,17 @@ class GradientGuidedSampler:
     tree: PrefixTree
     to_chain: MarkovChainFact
     competency: CompetencyEstimator
-    greed: float = 2  # Controls how biased the sampling is to large gradients.
+    temp: float = 2  # Controls how biased the sampling is to large gradients.
 
     @staticmethod
     def from_demos(
             demos: Demos, 
             to_chain: MarkovChainFact, 
             competency: CompetencyEstimator,
-            greed: float,
+            temp: float,
     ) -> GradientGuidedSampler:
         tree = PrefixTree.from_demos(demos)
-        return GradientGuidedSampler(tree, to_chain, competency, greed)
+        return GradientGuidedSampler(tree, to_chain, competency, temp)
 
     def __call__(self, concept: Concept) -> tuple[LabeledExamples, Any]:
         tree = self.tree
@@ -171,17 +172,19 @@ class GradientGuidedSampler:
         grad = np.array(surprisal_grad(chain, tree))
         surprisal_val = surprisal(chain, tree)
         meta_data = {'surprisal': surprisal_val, 'grad': grad}
+        mask = grad != 0
 
         examples = LabeledExamples()
-        while any(grad) > 0:
-            weights = np.abs(grad)**self.greed
-            node = random.choices(range(len(grad)), weights)[0]  # Sample node.
+        while mask.any() > 0:
+            weights = softmax(abs(grad[mask]) / self.temp)
+            nodes = np.flatnonzero(mask)
+            node = random.choices(nodes, weights)[0]  # Sample node.
 
             win = grad[node] < 0  # Target label.
 
             sample = chain.sample(pivot=node, win=not win)
             if sample is None:
-                grad[node] = 0  # Don't try this node again.
+                mask[node] = 0  # Don't try this node again. 
                 continue
 
             path, sample_prob = sample  
@@ -192,6 +195,7 @@ class GradientGuidedSampler:
                 examples @= LabeledExamples(positive=[path])  # type: ignore
             else:
                 examples @= LabeledExamples(negative=[path])  # type: ignore
+            meta_data['pivot'] = node
             return examples, meta_data
         raise RuntimeError("Gradient can't be use to guide search?!")
 
@@ -239,7 +243,7 @@ def diss(
     cooling_schedule: Callable[[int], float] | None = None,
     size_weight: float = 1,
     surprise_weight: float = 1,
-    sgs_greed: float = 2,
+    sgs_temp: float = 2,
     synth_timeout=15,
 ) -> Iterable[tuple[LabeledExamples, Optional[Concept]]]:
     """Perform demonstration informed gradiented guided search."""
@@ -251,7 +255,7 @@ def diss(
         demos=demos,
         to_chain=to_chain,
         competency=competency,
-        greed=sgs_greed,
+        temp=sgs_temp,
     )
     def handler(signum, frame):
         raise ConceptIdException
