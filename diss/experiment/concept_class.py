@@ -8,6 +8,7 @@ import numpy as np
 from functools import lru_cache
 from dfa import DFA
 from dfa.utils import find_subset_counterexample, find_equiv_counterexample
+from dfa.utils import minimize
 from dfa_identify import find_dfa, find_dfas
 
 from diss import LabeledExamples, ConceptIdException
@@ -175,6 +176,8 @@ def enumerative_search(
         alphabet=identifer.partial.dfa.inputs
     )
     dfas = filter(identifer.is_subset, dfas)
+    dfas = map(minimize, dfas)
+    dfas = fn.distinct(dfas)
     for i, lang in enumerate(dfas):
         if i >= n_iters:
             break

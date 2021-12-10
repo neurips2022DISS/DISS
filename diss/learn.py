@@ -267,7 +267,7 @@ def diss(
     new_data = LabeledExamples()
     for t in range(n_iters):
         if (t % reset_period) == 0:  # Reset to best example set.
-            concept = max(concept2energy, key=concept2energy.get, default=None)
+            concept = min(concept2energy, key=concept2energy.get, default=None)
             examples = concept2data.get(concept, LabeledExamples())
             energy = concept2energy.get(concept, float('inf'))
             new_data = LabeledExamples()
