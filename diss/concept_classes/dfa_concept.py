@@ -21,7 +21,7 @@ __all__ = ['DFAConcept', 'Sensor']
 
 DFA = dfa.DFA
 Sensor = Callable[[dfa.State], dfa.Letter] 
-ENUM_MAX = 5
+ENUM_MAX = 100
 
 
 def remove_stutter(graph: dfa.DFADict) -> None:
@@ -67,11 +67,12 @@ class DFAConcept:
             filter_pred: Callable[[DFA], bool] = None,
             alphabet: frozenset = None,
             find_dfas=find_dfas,
-            temp: float = 1) -> DFAConcept:
+            temp: float = 1,
+            order_by_stutter=True) -> DFAConcept:
         langs = find_dfas(
             data.positive, data.negative, 
             alphabet=alphabet,
-            order_by_stutter=True
+            order_by_stutter=order_by_stutter,
         )  # type: ignore
 
         if filter_pred is not None:
@@ -94,7 +95,7 @@ class DFAConcept:
         # number of non-stuttering labeled edges.
         graph, start = dfa.dfa2dict(lang)
         remove_stutter(graph)
-        size = np.log(count_edges(graph))
+        size = np.log(count_edges(graph) + 1)
 
         # Wrap dfa to conform to DFA Monitor API.
         @attr.frozen

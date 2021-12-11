@@ -232,6 +232,36 @@ def search(
 PathsOfInterest = set[Any]
 
 
+def keep_confident(temp, concept2energy, examples):
+    concepts = sorted(list(concept2energy), key=concept2energy.get)
+    energies = np.array([concept2energy[c] for c in concepts])
+    pmf = np.exp(-energies)
+    pmf /= pmf.sum()
+
+    positive, negative = set(), set()
+    for word in examples.unlabeled:
+        belief = pmf @ [(word in c) for c in concepts]
+        confidence = 2*(belief - 0.5 if belief > 0.5 else 0.5 - belief)
+        print(word, belief)
+        if np.random.rand() > confidence:
+            continue
+        if word in examples.negative:
+            negative.add(word)
+        else:
+            positive.add(word)
+    return LabeledExamples(positive, negative)  
+
+   
+def reset(temp, concept2energy, concept2data):
+    if not concept2energy:
+        return LabeledExamples()
+    concepts = list(concept2energy)
+    energies = np.array([concept2energy[c] for c in concepts])
+    weights = softmax(-energies)
+    concept = random.choices(concepts, weights)[0]
+    return concept2data[concept]
+
+
 def diss(
     demos: Demos, 
     to_concept: Identify,
@@ -264,16 +294,16 @@ def diss(
     weights = np.array([size_weight, surprise_weight])
     concept2energy = {}    # Concepts seen so far + associated energies.
     concept2data = {}      # Concepts seen so far + associated data.
-    new_data = LabeledExamples()
+    energy, new_data = float('inf'), LabeledExamples()
     for t in range(n_iters):
-        if (t % reset_period) == 0:  # Reset to best example set.
-            concept = min(concept2energy, key=concept2energy.get, default=None)
-            examples = concept2data.get(concept, LabeledExamples())
-            energy = concept2energy.get(concept, float('inf'))
-            new_data = LabeledExamples()
+        temp = cooling_schedule(t)
 
         # Sample from proposal distribution.
-        proposed_examples = examples @ new_data
+        if (t % reset_period) == 0:  # Reset to best example set.
+            proposed_examples = reset(temp, concept2energy, concept2data)
+        else:
+            proposed_examples = examples @ new_data
+
         try:
             signal.alarm(synth_timeout)
             concept = to_concept(proposed_examples)
@@ -299,7 +329,6 @@ def diss(
 
         # Accept/Reject proposal based on energy delta.
         dE = new_energy - energy
-        temp = cooling_schedule(t)
         if (dE < 0) or (np.exp(-dE / temp) > np.random.rand()): 
             energy, examples = new_energy, proposed_examples  # Accept.
         else:

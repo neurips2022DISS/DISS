@@ -87,14 +87,15 @@ BASE_EXAMPLES = LabeledExamples(
 
 
 @lru_cache
-def find_dfas2(accepting, rejecting, alphabet, order_by_stutter=False, N=5):
+def find_dfas2(accepting, rejecting, alphabet, order_by_stutter=False, N=20):
     dfas = find_dfas(
         accepting,
         rejecting,
         alphabet=alphabet,
         order_by_stutter=order_by_stutter,
     )
-    return fn.take(N, dfas)
+    dfas = fn.take(N, dfas)
+    return [attr.evolve(d, outputs={True, False}) for d in dfas]
 
 
 @lru_cache
@@ -151,6 +152,8 @@ class PartialDFAIdentifier:
             filter_pred=self.is_subset,
             alphabet=self.partial.dfa.inputs,
             find_dfas=find_dfas2,
+            order_by_stutter=True,
+            temp=1/10
         ) 
         # Adjust size to account for subset information.
         return attr.evolve(concept, size=concept.size - self.partial.size)
