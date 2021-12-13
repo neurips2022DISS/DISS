@@ -94,8 +94,7 @@ def find_dfas2(accepting, rejecting, alphabet, order_by_stutter=False, N=20):
         alphabet=alphabet,
         order_by_stutter=order_by_stutter,
     )
-    dfas = fn.take(N, dfas)
-    return [attr.evolve(d, outputs={True, False}) for d in dfas]
+    return fn.take(N, dfas)
 
 
 @lru_cache
@@ -178,6 +177,7 @@ def enumerative_search(
         allow_unminimized=True,
         alphabet=identifer.partial.dfa.inputs
     )
+    dfas = (attr.evolve(d, outputs={True, False}) for d in dfas)
     dfas = filter(identifer.is_subset, dfas)
     dfas = map(minimize, dfas)
     dfas = fn.distinct(dfas)
