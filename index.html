@@ -936,9 +936,9 @@ Afolabi, et al. "People as sensors: Imputing maps from human actions." IROS `18.
                        <li style="padding: 0.3em;" class="fragment">Sample a pivot, $k \sim D$ and a path, $\xi$, using the $\pi_\varphi$ such that:
                            <ol>
                                <li>$\xi$ pivots at $k$.
-                               <li> $\nabla_i \widehat{h} > 0 \iff \xi \in \varphi$.</li>
+                               <li> $\nabla_k \widehat{h} > 0 \iff \xi \in \varphi$.</li>
                            </ol>
-                        <li class="fragment">New label given by $\nabla_i \widehat{h} < 0$.</li>
+                        <li class="fragment">New label given by $\nabla_k \widehat{h} < 0$.</li>
                     </ol>
  
                     <img class="fragment" style="width: 80%; margin: 3em" src="imgs/sggs.svg"/>
@@ -987,7 +987,17 @@ Afolabi, et al. "People as sensors: Imputing maps from human actions." IROS `18.
                          style="height: 22em;"
                          src="imgs/top3.png"/>
                </section>
+
+                <section>
+                   <h1>Can handle monolithic synthesis as well</h1>
  
+                    <img data-id="3"
+                         style="height: 22em;"
+                         src="imgs/experiment3.svg"/>
+ 
+                </section>
+
+
 		<section class="motivating-question">
                     <h1>
                         DISS able to find high mass probability region
