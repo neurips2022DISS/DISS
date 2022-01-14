@@ -1,11 +1,11 @@
 from __future__ import annotations
+from functools import lru_cache
 from typing import Any, Optional, Sequence
 
 import attr
 import funcy as fn
 import dfa
 import numpy as np
-from functools import lru_cache
 from dfa import DFA
 from dfa.utils import find_subset_counterexample, find_equiv_counterexample
 from dfa.utils import minimize
