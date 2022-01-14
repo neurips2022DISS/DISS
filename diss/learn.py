@@ -229,9 +229,6 @@ def search(
                 yield examples, concept, metadata
 
 
-PathsOfInterest = set[Any]
-
-
 def keep_confident(temp, concept2energy, examples):
     concepts = sorted(list(concept2energy), key=concept2energy.get)
     energies = np.array([concept2energy[c] for c in concepts])

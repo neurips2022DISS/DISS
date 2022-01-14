@@ -92,7 +92,7 @@ def test_productmc():
             to_chain=lambda c, t, _: ProductMC.construct(
                 concept=c, tree=t, dyn=dyn, max_depth=None
             ),
-            greed=2
+            temp=10,
         )
 
     sampler = sampler_factory(demos)

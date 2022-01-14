@@ -122,7 +122,7 @@ def augment(self: PartialDFAIdentifier, data: LabeledExamples) -> LabeledExample
                     new_data @= LabeledExamples(negative=[prefix])
             data @= new_data
 
-        if new_data.size == 0:
+        if new_data.size == -1:
             break
     return data
 

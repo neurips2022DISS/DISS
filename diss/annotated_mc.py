@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from typing import Protocol, Optional, Sequence
 
+from diss import Concept
 from diss import Node, Edge, Path, State 
 from diss import DemoPrefixTree as PrefixTree
 
@@ -34,6 +35,9 @@ class AnnotatedMarkovChain(Protocol):
         """
         ...
 
-    @staticmethod
-    def from_tree(tree: PrefixTree) -> AnnotatedMarkovChain:
+    def construct(
+        concept: Concept,
+        tree: PrefixTree,
+        psat: float
+    ) -> AnnotatedMarkovChain:
         ...
