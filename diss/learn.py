@@ -2,12 +2,14 @@ from __future__ import annotations
 
 import random
 import signal
+from collections import defaultdict
 from itertools import combinations
 from pprint import pformat
 from typing import Any, Callable, Iterable, Optional, Protocol, Sequence
 
 import attr
 import numpy as np
+import networkx as nx
 from scipy.special import softmax
 
 from diss import AnnotatedMarkovChain as MarkovChain
@@ -87,56 +89,38 @@ ExampleSamplerFact = Callable[[Demos], ExampleSampler]
 
 
 def surprisal_grad(chain: MarkovChain, tree: PrefixTree) -> list[float]:
-    conform_prob: float
-    dS: list[float]
-    # TODO: Remove recursion and base on numpy.
-
     dS = (max(tree.nodes()) + 1) * [0.0]
     edge_probs = chain.edge_probs 
+
     deviate_probs: dict[int, float] = {}
     for n in tree.nodes():
         kids = tree.tree.neighbors(n)
         conform_prob = sum(edge_probs[n, k] for k in kids)
-        deviate_probs[n] = 1 - conform_prob 
+        deviate_probs[n] = 1 - conform_prob
 
+    # Calculate Reach probabilities
+    reach_lprobs = defaultdict(dict)
+    for node in reversed(list(nx.topological_sort(tree.tree))):
+        reach_lprobs[node][node] = 0
 
-    def compute_dS(node: Node) -> dict[int, float]:
-        reach_probs: dict[int, float]
-        kids = list(tree.tree.neighbors(node))
+        for kid in tree.tree.neighbors(node):
+            logp_kid = np.log(edge_probs[node, kid])
+            reach_lprobs[node][kid] = logp_kid
+            assert kid in reach_lprobs
+            for node2, logp_node2 in reach_lprobs[kid].items():
+                reach_lprobs[node][node2] = logp_kid + logp_node2
 
-        # Compute recursive reach probabilities.
-        reach_probs = {node: 1}
-        for k in tree.tree.neighbors(node):
-            reach_probs.update(compute_dS(k).items())
+    # Calculate gradient.
 
-        parent = tree.parent(node)
-        if parent is None:  # Root doesn't do anything.
-            return reach_probs
- 
-        # Take into account traversing edge.
-        edge_prob = edge_probs[parent, node]
-        for node2 in reach_probs:
-            reach_probs[node2] *= edge_prob
+    for i, j in tree.tree.edges:
+        if not tree.is_ego(i):
+            continue
+        for k, logp_ik in reach_lprobs[i].items():
+            p_ik = np.exp(logp_ik)
+            p_jk = np.exp(reach_lprobs[j].get(k, -float('inf')))
+            dS[k] += tree.count(j) * (p_ik - p_jk) * deviate_probs[k]
 
-        if not tree.is_ego(parent):  # Ignore non-decision edges for dS.
-            return reach_probs
-      
-        # Conform contribution.
-        for node2, reach_prob in reach_probs.items():
-            weight = tree.count(node) * (1 / edge_prob - 1) * reach_prob
-            if not tree.is_leaf(node2):
-                weight *= deviate_probs[node2]
-            dS[node2] -= weight 
-
-        # Deviate contribution.
-        dS[parent] += tree.count(parent) * deviate_probs[parent]
-
-        return reach_probs
-    
-    compute_dS(0)
-     
-    # Zero out any exhausted nodes.
-    return list(dS)
+    return dS
 
 
 def surprisal(chain: MarkovChain, tree: PrefixTree) -> float:
