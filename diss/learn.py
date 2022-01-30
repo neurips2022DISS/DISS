@@ -89,14 +89,15 @@ ExampleSamplerFact = Callable[[Demos], ExampleSampler]
 
 
 def surprisal_grad(chain: MarkovChain, tree: PrefixTree) -> list[float]:
-    dS = (max(tree.nodes()) + 1) * [0.0]
     edge_probs = chain.edge_probs 
 
-    deviate_probs: dict[int, float] = {}
+    dS = np.zeros(len(tree.tree.nodes))
+    deviate_probs = np.zeros_like(dS)
+
     for n in tree.nodes():
         kids = tree.tree.neighbors(n)
         conform_prob = sum(edge_probs[n, k] for k in kids)
-        deviate_probs[n] = 1 - conform_prob
+        deviate_probs[n] = max(0, min(1, 1 - conform_prob))
 
     # Calculate Reach probabilities
     reach_lprobs = defaultdict(dict)
@@ -113,7 +114,7 @@ def surprisal_grad(chain: MarkovChain, tree: PrefixTree) -> list[float]:
     # Calculate gradient.
 
     for i, j in tree.tree.edges:
-        if not tree.is_ego(i):
+        if (not tree.is_ego(i)) or tree.is_ego(j):
             continue
         for k, logp_ik in reach_lprobs[i].items():
             p_ik = np.exp(logp_ik)
