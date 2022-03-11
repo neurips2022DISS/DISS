@@ -43,6 +43,12 @@ def ignore_white(path):
     return tuple(x for x in path if x != 'white')
 
 
+def dont_count(aps):
+    for curr, prev in fn.with_prev(aps):
+        if curr == prev:
+            continue
+        yield curr
+
 def subset_check_wrapper(dfa_candidate):
     partial = partial_dfa(dfa_candidate.inputs)
     return find_subset_counterexample(dfa_candidate, partial) is None

@@ -10,8 +10,23 @@ import funcy as fn
 
 @attr.frozen
 class GridWorldCirc:
+    dim: int
     dyn: BV.AIGBV 
     sensor: BV.AIGBV
+    dyn_sense: BV.AIGBV  # Composition of dyn and sense.
+    slip_prob: float
+
+    def encode_state(self, x, y):
+        x, y = x - 1,  2 * self.dim - y
+        return {'state': (1 << x) | (1 << y)}
+
+    def ap_at_state(self, x, y):
+        state = self.encode_state(x, y)
+        obs = self.sensor(state)[0]
+        for key, (val,) in obs.items():
+            if val:
+                return key
+        raise RuntimeError('No AP at state')
 
     @staticmethod
     def from_string(buff, start, codec, slip_prob=1/32) -> GridWorldCirc:
@@ -47,4 +62,4 @@ class GridWorldCirc:
         for name, ap in overlay.items():
             sensor |= ap.with_output(name).aigbv
 
-        return GridWorldCirc(dyn, sensor)
+        return GridWorldCirc(dim, dyn, sensor, dyn >> sensor, slip_prob)

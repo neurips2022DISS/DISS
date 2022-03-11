@@ -11,6 +11,7 @@ attrs = "^21.0"
 numpy = "^1.21.2"
 scipy = "^1.7.2"
 funcy = "^1.16"
+jupyterlab = "^3.3.1"
 
 [tool.poetry.dev-dependencies]
 pytest = "^6.2.4"
@@ -25,14 +26,12 @@ matplotlib = "^3.4.3"
 seaborn = "^0.11.2"
 tqdm = "^4.62.3"
 python-sat = "^0.1.7.dev11"
-py-aiger = "^6.1.20"
-py-aiger-bdd = "^3.0.4"
+py-aiger = "^6.1.21"
+py-aiger-bdd = "^3.1"
 py-aiger-coins = "^3.3.6"
 py-aiger-gridworld = "^0.4.1"
 py-aiger-ptltl = "^3.1.0"
-jupyterthemes = "^0.20.0"
 py-aiger-dfa = "^0.4.1"
-jupyterlab = "^3.2.3"
 
 [build-system]
 requires = ["poetry>=0.12"]
