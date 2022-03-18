@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import random
+from collections import defaultdict
 from functools import reduce
 from typing import Any, Callable
 
@@ -64,6 +65,7 @@ class GridWorldPlanner:
     gw: GridWorldCirc
     manager: cudd.BDD 
     horizon: int
+    cache: dict[DFAConcept, dict[Any, Any]] = defaultdict(dict)
 
     @staticmethod
     def from_string(
@@ -110,7 +112,7 @@ class GridWorldPlanner:
             demo.extend([ (inputs['a'], 'env'), (inputs['c'], 'ego')])
         return demo
 
-    def lift_path(self, path, *, flattened=True):
+    def lift_path(self, path, *, flattened=True, compress=True):
         if flattened:
             dummy, start, *path = path
             assert dummy is None
@@ -122,14 +124,13 @@ class GridWorldPlanner:
             'x': 1 << (start[1] - 1), 'y': 1 << (start[0] - 1),  # Reversed for legacy reasons.
         }))
         aps = [fn.first(k for k, v in ap.items() if v == 1) for ap in aps]
-        aps = ignore_white(aps)
-        aps = dont_count(aps)
+        if compress:
+            aps = ignore_white(aps)
+            aps = dont_count(aps)
         return tuple(aps)
 
-    def plan(self, concept, tree, psat, monolithic):
-        dag = self.dfa2nx(concept)
-        policy = LiftedPolicy.from_psat(dag, psat=psat, gw=self.gw)
-
+    def plan(self, concept, tree, psat, monolithic=True):
+        policy = self.dfa2policy(concept, psat)
         # Associcate each tree stree with a policy state.
         stack = [(tree.root, policy.root)]
         tree2policy = {}
@@ -144,8 +145,16 @@ class GridWorldPlanner:
                 stack.append((tstate2, pstate2))
         return CompressedMC(tree, policy, tree2policy, monolithic, self.lift_path)
 
-    def dfa2nx(self, concept: DFAConcept) -> BExpr:
-        bexpr = dag = bdd_to_nx(self.dfa2bdd(concept))
+    def dfa2policy(self, concept, psat):
+        cache = self.cache[concept]
+        key = ("policy", psat) 
+        if key not in cache:
+            dag = self.dfa2nx(concept)
+            cache[key] = LiftedPolicy.from_psat(dag, psat=psat, gw=self.gw)
+        return cache[key]
+
+    def bdd2nx(self, bexpr: Bexpr) -> nx.DiGraph:
+        dag = bdd_to_nx(bexpr)
 
         for src, data in dag.nodes(data=True):
             label = data['label']
@@ -169,7 +178,14 @@ class GridWorldPlanner:
         dag.graph['lvls'] = self.manager.var_levels
         return dag
 
+    def dfa2nx(self, concept: DFAConcept) -> nx.DiGraph:
+        return self.bdd2nx(self.dfa2bdd(concept))
+
     def dfa2bdd(self, concept: DFAConcept) -> BExpr:
+        cache = self.cache[concept]
+        if 'bdd' in cache:
+            return cache['bdd']
+
         init = self.start is not None
         horizon = self.horizon
         monitor = self.dfa2monitor(concept)
@@ -193,6 +209,7 @@ class GridWorldPlanner:
             manager=self.manager, 
             renamer=lambda _, x: x,
         )
+        cache['bdd'] = bexpr
         return bexpr
 
     def dfa2monitor(self, concept: DFAConcept) -> BV.AIGBV:
@@ -423,5 +440,4 @@ class CompressedMC:
                 prev_ego = isinstance(action, str)
                 actions = {0, 1} if prev_ego else set(GW.dynamics.ACTIONS_C)
                 moves = [policy.transition(state, a) for a in actions]
-
         return path, sample_lprob

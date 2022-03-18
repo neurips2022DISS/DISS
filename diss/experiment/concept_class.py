@@ -159,7 +159,7 @@ class PartialDFAIdentifier:
             alphabet=self.partial.dfa.inputs,
             find_dfas=find_dfas2,
             order_by_stutter=True,
-            temp=1/10
+            temp=10
         ) 
         # Adjust size to account for subset information.
         return attr.evolve(concept, size=concept.size - self.partial.size)

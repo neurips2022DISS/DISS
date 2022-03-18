@@ -67,7 +67,7 @@ class DFAConcept:
             filter_pred: Callable[[DFA], bool] = None,
             alphabet: frozenset = None,
             find_dfas=find_dfas,
-            temp: float = 1,
+            temp: float = 10,
             order_by_stutter=True) -> DFAConcept:
         langs = find_dfas(
             data.positive, data.negative, 
@@ -93,14 +93,12 @@ class DFAConcept:
 
         # Measure size by encoding number of nodes and 
         # number of non-stuttering labeled edges.
-        graph, start = dfa.dfa2dict(lang)
-        remove_stutter(graph)
-        size = np.log(count_edges(graph) + 1)
+        size = len(bin(lang.to_int()))
 
         # Wrap dfa to conform to DFA Monitor API.
         @attr.frozen
         class DFAMonitor:
-            state: dfa.State = start
+            state: dfa.State = lang.start
 
             @property
             def accepts(self) -> bool:

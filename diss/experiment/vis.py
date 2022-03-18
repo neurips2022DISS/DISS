@@ -45,7 +45,7 @@ def get_dot(dfa_):
         #g.add_edge(pydot.Edge(nodes[start], nodes[end], color=color_list))
         for color in colors:
             g.add_edge(pydot.Edge(nodes[start], nodes[end], label='◼', fontcolor=color, color="white"))
-    g.set_bgcolor("#002b36")        
+    g.set_bgcolor("#00000000")        
     return g
 
 
