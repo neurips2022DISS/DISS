@@ -65,7 +65,7 @@ class GridWorldPlanner:
     gw: GridWorldCirc
     manager: cudd.BDD 
     horizon: int
-    cache: dict[DFAConcept, dict[Any, Any]] = defaultdict(dict)
+    cache: dict[DFAConcept, dict[Any, Any]] = attr.ib(factory=lambda: defaultdict(dict))
 
     @staticmethod
     def from_string(
@@ -287,7 +287,6 @@ def walk(dag, curr, bits):
                 break
         curr = (kid, get_debt(dag, node, kid))
     yield curr
-
 
 
 @attr.frozen
