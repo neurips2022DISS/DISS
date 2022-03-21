@@ -165,8 +165,10 @@ class GridWorldPlanner:
             aps = dont_count(aps)
         return tuple(aps)
 
-    def plan(self, concept, tree, psat, monolithic=True):
-        policy = self.dfa2policy(concept, psat)
+    def plan(self, concept, tree, psat, monolithic=True, use_rationality=True):
+        if use_rationality:
+            psat, rationality = None, psat
+        policy = self.dfa2policy(concept, psat, rationality)
         # Associcate each tree stree with a policy state.
         stack = [(tree.root, policy.root)]
         tree2policy = {}
@@ -181,12 +183,17 @@ class GridWorldPlanner:
                 stack.append((tstate2, pstate2))
         return CompressedMC(tree, policy, tree2policy, monolithic, self.lift_path)
 
-    def dfa2policy(self, concept, psat):
+    def dfa2policy(self, concept, psat=None, rationality=None):
+        assert (psat is None) ^ (rationality is None)
         cache = self.cache[concept]
-        key = ("policy", psat) 
+        key = ("policy", psat, rationality) 
         if key not in cache:
             dag = self.dfa2nx(concept)
-            cache[key] = LiftedPolicy.from_psat(dag, psat=psat, planner=self)
+            if psat is not None:
+                policy = LiftedPolicy.from_psat(dag, psat=psat, planner=self)
+            else:
+                policy = LiftedPolicy.from_rationality(dag, rationality, planner=self)
+            cache[key] = policy
         return cache[key]
 
     def bdd2nx(self, bexpr: Bexpr) -> nx.DiGraph:
@@ -355,19 +362,33 @@ class LiftedPolicy:
 
     @staticmethod
     def from_psat(unrolled, psat, planner, xtol=0.5):
-        ctl = TabularPolicy.from_psat(unrolled, psat, xtol=xtol)
-        return LiftedPolicy(ctl, planner)
+        return LiftedPolicy(
+            policy=TabularPolicy.from_psat(unrolled, psat, xtol=xtol),
+            planner=planner
+        )
+
+    @staticmethod
+    def from_rationality(unrolled, rationality, planner):
+        return LiftedPolicy(
+            policy=TabularPolicy.from_rationality(unrolled, rationality),
+            planner=planner
+        )
 
     def prob(self, node, move, log = False):
         dag = self.policy.dag
-        node1, debt1, _ = node 
+        node1, debt1, prev_action = node 
         node2, debt2, action = move
         if not ((node1 != node2) or (debt1 > debt2 >= 0)):
             raise RuntimeError
 
+        # Use prev_action to remove things
+
+        # TODO: Remove explicit case matching and do
+        #       descent down BDD for all cases.
         if isinstance(action, int):
-            prob = 1 - self.slip_prob if action & 1 else self.slip_prob
-            prob *= self.eoe_prob if action & 2 else 1 - self.eoe_prob
+            prob = self.eoe_prob if action & 2 else 1 - self.eoe_prob
+            if ((action & 2) == 0) and (prev_action != '←'):
+                prob *= 1 - self.slip_prob if action & 1 else self.slip_prob
             return np.log(prob) if log else prob
         elif isinstance(action, tuple):
             return -np.log(2) if log else 0.5
@@ -379,6 +400,7 @@ class LiftedPolicy:
         
         logp = 0
         for start, end in edges:
+            # TODO: Remove don't care prob and treat as a single action.
             if start[0] == end[0]:  # Don't care consumes bits.
                 logp -= np.log(2)
             else:
@@ -457,7 +479,8 @@ class CompressedMC:
             prev_ego = isinstance(state[-1], str)
 
             # Make sure to deviate from prefix tree at pivot.
-            actions = {0, 1} if prev_ego else set(GW.dynamics.ACTIONS_C)
+            # TODO: update to include ending episode action.
+            actions = {0, 1, 2, 3} if prev_ego else set(GW.dynamics.ACTIONS_C)
             actions -= {self.tree2policy[s][-1] for s in self.tree.tree.neighbors(pivot)}
 
             tmp = {policy.transition(state, a) for a in actions}
@@ -495,6 +518,7 @@ class CompressedMC:
                 moves = []
             else:
                 prev_ego = isinstance(action, str)
-                actions = {0, 1} if prev_ego else set(GW.dynamics.ACTIONS_C)
+                # TODO: update to include ending episode action.
+                actions = {0, 1, 2, 3} if prev_ego else set(GW.dynamics.ACTIONS_C)
                 moves = [policy.transition(state, a) for a in actions]
         return path, sample_lprob
