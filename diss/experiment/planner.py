@@ -35,6 +35,26 @@ CODEC = {
 COLORS = frozenset(CODEC.values())
 
 
+# Circuit used to encode dynamically ending episode.
+EOE_CIRC = BV.aig2aigbv(A.parse(
+'''aag 8 2 2 1 4
+2
+4
+6 11 0
+8 16 0
+16
+10 7 3
+12 7 5
+14 9 6
+16 15 13
+i0 EOE
+i1 SAT
+o0 SAT
+l0 EOE_prev
+l1 SAT_prev
+'''))
+
+
 def bits_needed(n: int) -> int:
     return len(bin(n - 1)) - 2  # Number of bits needed to encode n.
 
@@ -65,15 +85,17 @@ class GridWorldPlanner:
     gw: GridWorldCirc
     manager: cudd.BDD 
     horizon: int
+    eoe_prob: float
     cache: dict[DFAConcept, dict[Any, Any]] = attr.ib(factory=lambda: defaultdict(dict))
 
     @staticmethod
     def from_string(
             buff: str,
             horizon: int,
-            slip_prob: float=1/32,
+            slip_prob: float = 1/32,
             start: Pos | None = None,
             manager: cudd.BDD | None = None,
+            eoe_prob: float = 1/32
         ) -> GridWorldPlanner:
         gw = GridWorldCirc.from_string(
             buff=buff,
@@ -93,6 +115,7 @@ class GridWorldPlanner:
                 causal_order.append(f'a##time_{t}[0]')
                 causal_order.append(f'a##time_{t}[1]')
                 causal_order.append(f'c##time_{t}[0]')
+                causal_order.append(f'EOE##time_{t}[0]')
             manager.declare(*causal_order)
             manager.reorder({x: i for i, x in enumerate(causal_order)})
             manager.configure(reordering=False)
@@ -101,7 +124,8 @@ class GridWorldPlanner:
             start=start,
             manager=manager,
             horizon=horizon,
-            gw=gw
+            gw=gw,
+            eoe_prob=eoe_prob,
         )
 
     def to_demo(self, trc):
@@ -109,16 +133,28 @@ class GridWorldPlanner:
 
         demo = [ (None, 'env'), (start, 'ego')]
         for inputs in trc:
-            demo.extend([ (inputs['a'], 'env'), (inputs['c'], 'ego')])
+            eoe = inputs.get('EOE', 0) << 1
+            demo.extend([ 
+                (inputs['a'], 'env'),
+                (inputs['c'] | eoe, 'ego')
+            ])
         return demo
 
     def lift_path(self, path, *, flattened=True, compress=True):
         if flattened:
             dummy, start, *path = path
             assert dummy is None
-            path = [{'a': a, 'c': c} for a, c in fn.chunks(2, path)]
+            path = [{'a': a, 'c': env & 1, 'EOE': env >> 1} for a, env in fn.chunks(2, path)]
         else:
             start, *path =  path
+
+        # Process EOE signal.
+        path2 = []
+        for inputs in path:
+            path2.append({'a': inputs['a'], 'c': inputs['c']})
+            if inputs.get('EOE', 0):
+                break
+        path = path2
 
         aps = fn.pluck(0, self.gw.dyn_sense.simulate(path, latches={
             'x': 1 << (start[1] - 1), 'y': 1 << (start[0] - 1),  # Reversed for legacy reasons.
@@ -150,7 +186,7 @@ class GridWorldPlanner:
         key = ("policy", psat) 
         if key not in cache:
             dag = self.dfa2nx(concept)
-            cache[key] = LiftedPolicy.from_psat(dag, psat=psat, gw=self.gw)
+            cache[key] = LiftedPolicy.from_psat(dag, psat=psat, planner=self)
         return cache[key]
 
     def bdd2nx(self, bexpr: Bexpr) -> nx.DiGraph:
@@ -171,6 +207,8 @@ class GridWorldPlanner:
             label = dag.nodes[src]['label']
             if label.startswith('c'):
                 bias = self.gw.slip_prob
+            elif label.startswith('EOE'):
+                bias = 1 - self.eoe_prob
             else:
                 assert label.startswith('x') or label.startswith('y')
                 bias = 0.5
@@ -200,6 +238,10 @@ class GridWorldPlanner:
             unrolled <<= BV.uatom(monitor.aigbv.lmap['state'].size, state) \
                            .with_output('state##time_0')    \
                            .aigbv
+            # Initialize EOE_CIRC latches.
+            unrolled <<= BV.source(1, 0, 'EOE_prev##time_0', signed=False) \
+                       | BV.source(1, 0, 'SAT_prev##time_0', signed=False)
+ 
             # Change encoding to make all assignments to initial (x, y) 
             # variables a valid start location.
             unrolled <<= to_onehot(8, 'x##time_0') | to_onehot(8, 'y##time_0')
@@ -251,7 +293,7 @@ class GridWorldPlanner:
                 sat = output[key['output'].index(True)].with_output('SAT')
         monitor = action.aigbv >> circ >> sat.aigbv
         monitor = attr.evolve(monitor, aig=monitor.aig.lazy_aig)  # HACK: force lazy evaluation.
-        return self.gw.dyn >> self.gw.sensor >> monitor
+        return self.gw.dyn >> self.gw.sensor >> monitor >> EOE_CIRC
 
 
 # =========================================================================#
@@ -264,7 +306,8 @@ class GridWorldPlanner:
 def get_lvl(dag, node):
     label = dag.nodes[node]['label']
     if isinstance(label, bool):
-        return len(dag.graph['lvls'])
+        n_vars = len(dag.graph['lvls'])
+        return dag.graph['lvls'].get('sat0', n_vars)
     return dag.graph['lvls'][label]
 
 def get_debt(dag, node1, node2):
@@ -292,7 +335,15 @@ def walk(dag, curr, bits):
 @attr.frozen
 class LiftedPolicy:
     policy: TabularPolicy
-    gw: GridWorldCirc
+    planner: GridWorldPlanner
+
+    @property
+    def eoe_prob(self) -> float:
+        return self.planner.eoe_prob
+
+    @property
+    def slip_prob(self) -> float:
+        return self.planner.gw.slip_prob
 
     def psat(self, node = None): return self.policy.psat(node[0])
     def lsat(self, node = None): return self.policy.lsat(node[0])
@@ -303,9 +354,9 @@ class LiftedPolicy:
         return (root, get_lvl(dag, root), None)
 
     @staticmethod
-    def from_psat(unrolled, psat, gw, xtol=0.5):
+    def from_psat(unrolled, psat, planner, xtol=0.5):
         ctl = TabularPolicy.from_psat(unrolled, psat, xtol=xtol)
-        return LiftedPolicy(ctl, gw)
+        return LiftedPolicy(ctl, planner)
 
     def prob(self, node, move, log = False):
         dag = self.policy.dag
@@ -315,7 +366,8 @@ class LiftedPolicy:
             raise RuntimeError
 
         if isinstance(action, int):
-            prob = 31 / 32 if action else 1/32
+            prob = 1 - self.slip_prob if action & 1 else self.slip_prob
+            prob *= self.eoe_prob if action & 2 else 1 - self.eoe_prob
             return np.log(prob) if log else prob
         elif isinstance(action, tuple):
             return -np.log(2) if log else 0.5
@@ -342,18 +394,20 @@ class LiftedPolicy:
             bits = [bits & 1, (bits >> 1) & 1]
         elif isinstance(action, tuple):
             y, x = action  # Flipped for legacy reasons.
-            size = bits_needed(self.gw.dim)
+            size = bits_needed(self.planner.gw.dim)
             bits = list(BV.encode_int(size, x - 1, signed=False))
             bits.extend(BV.encode_int(size, y - 1, signed=False))
         else:
-            bits = [action]
+            bits = [action & 1, action >> 1]
         node, debt = fn.last(walk(dag, pstate[:2], bits))  # QDD state.
         return (node, debt, action)
 
     def end_of_episode(self, pstate):
-        node, debt, _ = pstate
+        node, debt, action = pstate
         dag = self.policy.dag
-        return (debt == 0) and (dag.out_degree(node) == 0)
+        at_horizon = (debt == 0) and (dag.out_degree(node) == 0)
+        eoe_triggered = isinstance(action, int) and (action >> 1)
+        return eoe_triggered or at_horizon
 
 
 # TODO: Change monolithic flag to generic subset filter.
@@ -425,7 +479,11 @@ class CompressedMC:
                 normalizer = 1 - normalizer
 
             probs =  priors * likelihoods / normalizer
-            prob, state = random.choices(list(zip(probs, moves)), probs)[0]
+            try:
+                prob, state = random.choices(list(zip(probs, moves)), probs)[0]
+            except:
+                return None  # Numerical stability problem!
+
             if policy.policy.dag.nodes[state[0]]['kind'] == 'ego':
                 sample_lprob += np.log(prob)
 
