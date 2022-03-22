@@ -140,7 +140,7 @@ class GridWorldPlanner:
             ])
         return demo
 
-    def lift_path(self, path, *, flattened=True, compress=True):
+    def lift_path(self, path, *, flattened=True, compress=True, with_state=False):
         if flattened:
             dummy, start, *path = path
             assert dummy is None
@@ -156,13 +156,18 @@ class GridWorldPlanner:
                 break
         path = path2
 
-        aps = fn.pluck(0, self.gw.dyn_sense.simulate(path, latches={
+        aps_and_states = self.gw.dyn_sense.simulate(path, latches={
             'x': 1 << (start[1] - 1), 'y': 1 << (start[0] - 1),  # Reversed for legacy reasons.
-        }))
+        })
+        aps = fn.pluck(0, aps_and_states)
+        states = fn.lpluck(1, aps_and_states)
         aps = [fn.first(k for k, v in ap.items() if v == 1) for ap in aps]
         if compress:
             aps = ignore_white(aps)
             aps = dont_count(aps)
+
+        if with_state:
+            return tuple(aps), tuple(states)
         return tuple(aps)
 
     def plan(self, concept, tree, psat, monolithic=True, use_rationality=True):
@@ -451,12 +456,12 @@ class CompressedMC:
         return edge_probs
     
     def sample(self, pivot, win, attempts=20):
-        # Sample until you give a path that respects subset properties.
+        # Sample until you give a path that respects subset and pivot properties.
         for i in range(attempts):
             result = self._sample(pivot, win)
             if result is None:
                 return result
-            word = self.lift_path(result[0])
+            word, states = self.lift_path(result[0], with_state=True)
             if self.monolithic:
                 return result  # Allow violations of subset in sample.
             if (not win) and (('red' in word) or ('yellow' not in word)):
@@ -480,7 +485,8 @@ class CompressedMC:
 
             # Make sure to deviate from prefix tree at pivot.
             # TODO: update to include ending episode action.
-            actions = {0, 1, 2, 3} if prev_ego else set(GW.dynamics.ACTIONS_C)
+            # HACK: Need to check if two actions are logically equivilent.
+            actions = {0, 1, 3} if prev_ego else set(GW.dynamics.ACTIONS_C)
             actions -= {self.tree2policy[s][-1] for s in self.tree.tree.neighbors(pivot)}
 
             tmp = {policy.transition(state, a) for a in actions}
@@ -519,6 +525,6 @@ class CompressedMC:
             else:
                 prev_ego = isinstance(action, str)
                 # TODO: update to include ending episode action.
-                actions = {0, 1, 2, 3} if prev_ego else set(GW.dynamics.ACTIONS_C)
+                actions = {0, 1, 3} if prev_ego else set(GW.dynamics.ACTIONS_C)
                 moves = [policy.transition(state, a) for a in actions]
         return path, sample_lprob
