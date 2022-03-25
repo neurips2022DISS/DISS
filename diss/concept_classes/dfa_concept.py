@@ -8,7 +8,7 @@ import attr
 import dfa
 import funcy as fn
 import numpy as np
-from dfa.utils import find_equiv_counterexample
+from dfa.utils import find_equiv_counterexample, dfa2dict
 from pysat.solvers import Minicard
 from dfa_identify import find_dfas
 from scipy.special import softmax
@@ -30,6 +30,29 @@ def remove_stutter(graph: dfa.DFADict) -> None:
         kids2 = {k: v for k, v in kids.items() if v != state}
         kids.clear()
         kids.update(kids2)
+
+
+def measure_diff(concept: DFAConcept, ref: DFAConcept) -> float:
+    lang = concept.dfa
+    ref = ref.dfa
+
+    if lang == ref:
+        return float('inf')  # Don't want to sample equivilent DFAs.
+
+    graph, _ = dfa2dict(lang)
+    graph_ref, _ = dfa2dict(ref)
+    
+    accepting = {(k, v) for k, (v, _) in graph.items()}
+    accepting_ref = {(k, v) for k, (v, _) in graph_ref.items()}
+    daccepting = len(accepting ^ accepting_ref) / 2
+    dstates = abs(len(graph) - len(graph_ref))
+    
+    edges = set.union(*({(s, c, e) for c, e in trans.items()} for s, (_, trans) in graph.items()))
+    edges_ref = set.union(*({(s, c, e) for c, e in trans.items()} for s, (_, trans) in graph_ref.items()))
+    d_edges = len(edges ^ edges_ref) / 2
+    
+    size = dstates + np.log(len(graph)) * daccepting + d_edges * (2*np.log(len(graph)) + np.log(len(lang.inputs)))
+    return size
 
 
 def count_edges(graph: dfa.DFADict) -> int:
@@ -68,7 +91,9 @@ class DFAConcept:
             alphabet: frozenset = None,
             find_dfas=find_dfas,
             temp: float = 10,
-            order_by_stutter=True) -> DFAConcept:
+            order_by_stutter=True,
+            ref: DFAConcept = None,
+            ) -> DFAConcept:
         langs = find_dfas(
             data.positive, data.negative, 
             alphabet=alphabet,
@@ -82,8 +107,15 @@ class DFAConcept:
             raise ConceptIdException
 
         concepts = [DFAConcept.from_dfa(lang) for lang in langs]
-        weights = [np.exp(-c.size / temp) for c in concepts]
-        return random.choices(concepts, weights)[0]  # type: ignore
+        if ref:
+            sizes = np.array([measure_diff(c, ref) for c in concepts])
+        else:
+            sizes = np.array([c.size for c in concepts])
+        weights = softmax(-sizes / temp)
+        try:
+            return random.choices(concepts, weights)[0]  # type: ignore
+        except:
+            return concepts[-1]
 
     @staticmethod
     def from_dfa(lang: DFA) -> DFAConcept:

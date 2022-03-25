@@ -160,13 +160,15 @@ class GridWorldPlanner:
             'x': 1 << (start[1] - 1), 'y': 1 << (start[0] - 1),  # Reversed for legacy reasons.
         })
         aps = fn.pluck(0, aps_and_states)
-        states = fn.lpluck(1, aps_and_states)
         aps = [fn.first(k for k, v in ap.items() if v == 1) for ap in aps]
         if compress:
             aps = ignore_white(aps)
             aps = dont_count(aps)
 
         if with_state:
+            states = fn.pluck(1, aps_and_states)
+            states = (fn.walk_values(lambda x: x.index(True), s) for s in states)
+            states = ((s['y'] + 1, s['x'] + 1) for s in states)  # Flipped for legacy reasons.
             return tuple(aps), tuple(states)
         return tuple(aps)
 
@@ -487,7 +489,13 @@ class CompressedMC:
             # TODO: update to include ending episode action.
             # HACK: Need to check if two actions are logically equivilent.
             actions = {0, 1, 3} if prev_ego else set(GW.dynamics.ACTIONS_C)
-            actions -= {self.tree2policy[s][-1] for s in self.tree.tree.neighbors(pivot)}
+            neighbors = self.tree.tree.neighbors(pivot)
+            neighbor_actions = {self.tree2policy[s][-1] for s in neighbors}
+            actions -= neighbor_actions
+
+            # HACK: Don't allow eoe counter-factuals!
+            if prev_ego and (neighbor_actions <= {3, 4}):
+                return None
 
             tmp = {policy.transition(state, a) for a in actions}
 

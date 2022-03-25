@@ -158,6 +158,7 @@ class GradientGuidedSampler:
         surprisal_val = surprisal(chain, tree)
         meta_data = {'surprisal': surprisal_val, 'grad': grad}
         mask = grad != 0
+        #grad *= np.ones_like(grad) - 0.9*(grad < 0)
 
         examples = LabeledExamples()
         while mask.any() > 0:
@@ -181,6 +182,7 @@ class GradientGuidedSampler:
             else:
                 examples @= LabeledExamples(negative=[path])  # type: ignore
             meta_data['pivot'] = node
+            meta_data['weights'] = softmax(abs(grad / self.temp)) * mask
             return examples, meta_data
         raise RuntimeError("Gradient can't be use to guide search?!")
 
@@ -253,10 +255,11 @@ def diss(
     n_iters: int = 25,
     reset_period: int = 5,
     cooling_schedule: Callable[[int], float] | None = None,
-    size_weight: float = 1,
-    surprise_weight: float = 1,
-    sgs_temp: float = 2,
-    synth_timeout=15,
+    size_weight: float = 1.0,
+    surprise_weight: float = 1.0,
+    sgs_temp: float = 2.0,
+    synth_timeout: int = 15,
+    example_drop_prob: float = 0.0,
 ) -> Iterable[tuple[LabeledExamples, Optional[Concept]]]:
     """Perform demonstration informed gradiented guided search."""
     if cooling_schedule is None:
@@ -273,6 +276,12 @@ def diss(
         raise ConceptIdException
     signal.signal(signal.SIGALRM, handler)
 
+    def drop_pred(example):
+        match example_drop_prob:
+            case 0.0: return True
+            case 1.0: return False
+            case p: return p <= random.random()
+
     weights = np.array([size_weight, surprise_weight])
     concept2energy = {}    # Concepts seen so far + associated energies.
     concept2data = {}      # Concepts seen so far + associated data.
@@ -282,13 +291,19 @@ def diss(
 
         # Sample from proposal distribution.
         if (t % reset_period) == 0:  # Reset to best example set.
+            concept = None
             proposed_examples = reset(temp, concept2energy, concept2data)
         else:
-            proposed_examples = examples @ new_data
+            # Drop examples with some probability.
+            examples2 = LabeledExamples(
+                positive=filter(drop_pred, examples.positive),
+                negative=filter(drop_pred, examples.negative),
+                )
+            proposed_examples = examples2 @ new_data
 
         try:
             signal.alarm(synth_timeout)
-            concept = to_concept(proposed_examples)
+            concept = to_concept(proposed_examples, concept=concept)
             signal.alarm(0)  # Unset alarm.
             concept2data.setdefault(concept, proposed_examples)
         except ConceptIdException:

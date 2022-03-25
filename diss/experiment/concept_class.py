@@ -94,12 +94,37 @@ BASE_EXAMPLES = LabeledExamples(
 
 @lru_cache
 def find_dfas2(accepting, rejecting, alphabet, order_by_stutter=False, N=20):
+    reach1 = set.union(*map(set, accepting)) if accepting else set()
+    avoid = set.union(*map(set, rejecting)) if rejecting else set()
+    reach2 = reach1 - avoid
+
+    for x in set(avoid):
+        problem_words = (w for w in accepting if x in w)
+        for word in problem_words:
+            prefix = word[:word.index(x)]
+            if len(reach2 & set(prefix)) == 0:
+                avoid.remove(x)
+                break
+    avoid -= reach1  # Make sure now to kill anything in accepting.
+
+    print(f'{avoid=}')
+    if avoid:
+        avoid_lang = DFA(
+            start=True, inputs=alphabet, label=bool,
+            transition=lambda s, c: s and (c not in avoid)
+        )
+        assert all(not (set(w) & avoid) for w in accepting)
+        rejecting = {w for w in rejecting if not (set(w) & avoid)}
+
     dfas = find_dfas(
         accepting,
         rejecting,
         alphabet=alphabet,
         order_by_stutter=order_by_stutter,
     )
+    if avoid:
+        dfas = (minimize(lang & avoid_lang) for lang in dfas)
+
     return fn.take(N, dfas)
 
 
@@ -138,6 +163,7 @@ def augment(self: PartialDFAIdentifier, data: LabeledExamples) -> LabeledExample
 class PartialDFAIdentifier:
     partial: DFAConcept = attr.ib(converter=DFAConcept.from_dfa)
     base_examples: LabeledExamples = LabeledExamples()
+    try_reach_avoid: bool = False
 
     def partial_dfa(self, inputs) -> DFA:
         assert inputs <= self.partial.dfa.inputs
@@ -150,7 +176,9 @@ class PartialDFAIdentifier:
     def is_subset(self, candidate: DFA) -> Optional[Sequence[Any]]:
         return self.subset_ce(candidate) is None
 
-    def __call__(self, data: LabeledExamples) -> DFAConcept:
+    def __call__(self, data: LabeledExamples, concept: DFAConcept) -> DFAConcept:
+        reference = concept
+
         data = augment(self, data)
 
         concept = DFAConcept.from_examples(
@@ -159,8 +187,10 @@ class PartialDFAIdentifier:
             alphabet=self.partial.dfa.inputs,
             find_dfas=find_dfas2,
             order_by_stutter=True,
-            temp=10
+            temp=20,
+            ref=reference
         ) 
+
         # Adjust size to account for subset information.
         return attr.evolve(concept, size=concept.size - self.partial.size)
 
