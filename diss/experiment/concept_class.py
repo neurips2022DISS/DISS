@@ -187,7 +187,7 @@ class PartialDFAIdentifier:
             alphabet=self.partial.dfa.inputs,
             find_dfas=find_dfas2,
             order_by_stutter=True,
-            temp=20,
+            temp=1,
             ref=reference
         ) 
 
@@ -218,11 +218,16 @@ def enumerative_search(
     dfas = filter(identifer.is_subset, dfas)
     dfas = map(minimize, dfas)
     dfas = fn.distinct(dfas)
-    for i, lang in enumerate(dfas):
-        if i >= n_iters:
-            break
-        concept = DFAConcept.from_dfa(lang)
-        concept = attr.evolve(concept, size=concept.size - identifer.partial.size)
+
+    # Convert to representation class.
+    ref_size = identifer.partial.size
+    concepts = map(DFAConcept.from_dfa, dfas)
+    concepts = (attr.evolve(c, size=c.size - ref_size) for c in concepts)
+    print(f'Enumerating {n_iters} DFAs in lexicographic order...')
+    concepts = fn.take(n_iters, concepts)
+    print(f'Sorting by size')
+    concepts = sorted(concepts, key=lambda c: c.size)
+    for concept in concepts:
         chain = to_chain(concept, tree, competency(concept, tree))
         metadata = {
             'energy': weights @ [concept.size, surprisal(chain, tree)],

@@ -1,9 +1,10 @@
 from __future__ import annotations
 
 import random
+import shelve
 from collections import defaultdict
-from functools import reduce
-from typing import Any, Callable
+from functools import reduce, lru_cache
+from typing import Any, Callable, Mapping
 
 import aiger as A
 import aiger_bv as BV
@@ -79,6 +80,7 @@ def to_onehot(n: int, name: str):
     )
 
 
+
 @attr.frozen
 class GridWorldPlanner:
     start: tuple[int, int] | None
@@ -86,7 +88,10 @@ class GridWorldPlanner:
     manager: cudd.BDD 
     horizon: int
     eoe_prob: float
-    cache: dict[DFAConcept, dict[Any, Any]] = attr.ib(factory=lambda: defaultdict(dict))
+    policy_cache: Mapping[str, LiftedPolicy] = attr.ib(factory=dict)
+
+    def __hash__(self):
+        return hash((self.gw, self.eoe_prob, self.horizon))
 
     @staticmethod
     def from_string(
@@ -95,7 +100,8 @@ class GridWorldPlanner:
             slip_prob: float = 1/32,
             start: Pos | None = None,
             manager: cudd.BDD | None = None,
-            eoe_prob: float = 1/32
+            eoe_prob: float = 1/32,
+            policy_cache: str | None = None,
         ) -> GridWorldPlanner:
         gw = GridWorldCirc.from_string(
             buff=buff,
@@ -103,6 +109,11 @@ class GridWorldPlanner:
             slip_prob=1/32,
             codec=CODEC,
         )
+        if policy_cache is None:
+            policy_cache = dict()
+        else:
+            assert isinstance(policy_cache, str)
+            policy_cache = shelve.open(policy_cache)
 
         if manager is None:
             manager = cudd.BDD()
@@ -126,6 +137,7 @@ class GridWorldPlanner:
             horizon=horizon,
             gw=gw,
             eoe_prob=eoe_prob,
+            policy_cache=policy_cache
         )
 
     def to_demo(self, trc):
@@ -192,16 +204,15 @@ class GridWorldPlanner:
 
     def dfa2policy(self, concept, psat=None, rationality=None):
         assert (psat is None) ^ (rationality is None)
-        cache = self.cache[concept]
-        key = ("policy", psat, rationality) 
-        if key not in cache:
+        key = str(concept.dfa.to_int())
+        if key not in self.policy_cache:
             dag = self.dfa2nx(concept)
             if psat is not None:
                 policy = LiftedPolicy.from_psat(dag, psat=psat, planner=self)
             else:
                 policy = LiftedPolicy.from_rationality(dag, rationality, planner=self)
-            cache[key] = policy
-        return cache[key]
+            self.policy_cache[key] = policy
+        return self.policy_cache[key]
 
     def bdd2nx(self, bexpr: Bexpr) -> nx.DiGraph:
         dag = bdd_to_nx(bexpr)
@@ -233,11 +244,8 @@ class GridWorldPlanner:
     def dfa2nx(self, concept: DFAConcept) -> nx.DiGraph:
         return self.bdd2nx(self.dfa2bdd(concept))
 
+    @lru_cache
     def dfa2bdd(self, concept: DFAConcept) -> BExpr:
-        cache = self.cache[concept]
-        if 'bdd' in cache:
-            return cache['bdd']
-
         init = self.start is not None
         horizon = self.horizon
         monitor = self.dfa2monitor(concept)
@@ -265,7 +273,6 @@ class GridWorldPlanner:
             manager=self.manager, 
             renamer=lambda _, x: x,
         )
-        cache['bdd'] = bexpr
         return bexpr
 
     def dfa2monitor(self, concept: DFAConcept) -> BV.AIGBV:
@@ -349,15 +356,9 @@ def walk(dag, curr, bits):
 @attr.frozen
 class LiftedPolicy:
     policy: TabularPolicy
-    planner: GridWorldPlanner
-
-    @property
-    def eoe_prob(self) -> float:
-        return self.planner.eoe_prob
-
-    @property
-    def slip_prob(self) -> float:
-        return self.planner.gw.slip_prob
+    eoe_prob: float
+    slip_prob: float
+    dim: int
 
     def psat(self, node = None): return self.policy.psat(node[0])
     def lsat(self, node = None): return self.policy.lsat(node[0])
@@ -371,14 +372,16 @@ class LiftedPolicy:
     def from_psat(unrolled, psat, planner, xtol=0.5):
         return LiftedPolicy(
             policy=TabularPolicy.from_psat(unrolled, psat, xtol=xtol),
-            planner=planner
+            eoe_prob=planner.eoe_prob, slip_prob=planner.gw.slip_prob, 
+            dim=planner.gw.dim,
         )
 
     @staticmethod
     def from_rationality(unrolled, rationality, planner):
         return LiftedPolicy(
             policy=TabularPolicy.from_rationality(unrolled, rationality),
-            planner=planner
+            eoe_prob=planner.eoe_prob, slip_prob=planner.gw.slip_prob,
+            dim=planner.gw.dim,
         )
 
     def prob(self, node, move, log = False):
@@ -423,7 +426,7 @@ class LiftedPolicy:
             bits = [bits & 1, (bits >> 1) & 1]
         elif isinstance(action, tuple):
             y, x = action  # Flipped for legacy reasons.
-            size = bits_needed(self.planner.gw.dim)
+            size = bits_needed(self.dim)
             bits = list(BV.encode_int(size, x - 1, signed=False))
             bits.extend(BV.encode_int(size, y - 1, signed=False))
         else:

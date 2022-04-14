@@ -37,7 +37,7 @@ def measure_diff(concept: DFAConcept, ref: DFAConcept) -> float:
     ref = ref.dfa
 
     if lang == ref:
-        return float('inf')  # Don't want to sample equivilent DFAs.
+        return 0  # Don't want to sample equivilent DFAs.
 
     graph, _ = dfa2dict(lang)
     graph_ref, _ = dfa2dict(ref)
@@ -115,7 +115,7 @@ class DFAConcept:
         try:
             return random.choices(concepts, weights)[0]  # type: ignore
         except:
-            return concepts[-1]
+            return concepts[0]
 
     @staticmethod
     def from_dfa(lang: DFA) -> DFAConcept:
