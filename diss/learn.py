@@ -308,6 +308,7 @@ def diss(
             concept2data.setdefault(concept, proposed_examples)
         except ConceptIdException:
             new_data = LabeledExamples()  # Reject: New data caused problem. 
+            signal.alarm(0)  # Unset alarm.
             continue
 
         new_data, metadata = sggs(concept)
