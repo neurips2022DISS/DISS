@@ -281,7 +281,7 @@ def diss(
             return True
         elif example_drop_prob == 1.0:
             return False
-        return p <= random.random()
+        return example_drop_prob <= random.random()
 
     weights = np.array([size_weight, surprise_weight])
     concept2energy = {}    # Concepts seen so far + associated energies.
