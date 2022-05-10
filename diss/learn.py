@@ -277,10 +277,11 @@ def diss(
     signal.signal(signal.SIGALRM, handler)
 
     def drop_pred(example):
-        match example_drop_prob:
-            case 0.0: return True
-            case 1.0: return False
-            case p: return p <= random.random()
+        if example_drop_prob == 0.0:
+            return True
+        elif example_drop_prob == 1.0:
+            return False
+        return p <= random.random()
 
     weights = np.array([size_weight, surprise_weight])
     concept2energy = {}    # Concepts seen so far + associated energies.
