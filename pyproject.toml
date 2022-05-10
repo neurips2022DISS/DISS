@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "diss"
-version = "0.2.8"
+version = "0.2.9"
 description = "Demonstration Informed Specification Search"
 authors = ["Marcell Vazquez-Chanlatte <mvc@linux.com>"]
 license = "MIT"
