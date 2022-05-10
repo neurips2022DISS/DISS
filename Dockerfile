@@ -1,5 +1,5 @@
 # Start from a core stack version
-FROM jupyter/scipy-notebook:notebook-6.4.11
+FROM jupyter/scipy-notebook:notebook-6.4.5
 USER root
 RUN apt-get update && apt-get install -y \
     zlib1g-dev \
