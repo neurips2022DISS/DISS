@@ -11,5 +11,3 @@ COPY requirements.txt /tmp/
 COPY experiment.ipynb /home/jovyan/
 RUN pip install wheel
 RUN pip install --requirement /tmp/requirements.txt
-RUN mkdir -p ~/.jupyterlab/user-settings/@jupyterlab/apputils-extension/ && \
-    echo '{ "theme":"JupyterLab Dark" }' > themes.jupyterlab-settings
